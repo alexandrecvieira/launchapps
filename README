@@ -1,0 +1,43 @@
+LaunchApps - Application Launcher for LXPanel
+
+A linguagem é C.
+
+O plugin será instalado em: <b>/usr/lib/x86_64-linux-gnu/lxpanel/plugins</b>
+
+O arquivo de tradução <b>/usr/share/locale/pt_BR/LC_MESSAGES/launchapps.mo</b> será instalado com a tradução do plugin LaunchApps.
+
+Até o momento o plugin tem tradução para o inglês(default) e português.
+
+Tutorial referência: http://wiki.lxde.org/en/How_to_write_plugins_for_LXPanel
+
+Dependências:
+	Para Ubuntu e Debian Stretch:
+	sudo apt-get install lxpanel-dev libglib2.0-dev libgtk2.0-dev libfm-dev
+
+	Para Debian Jessie:
+	sudo apt-get install libglib2.0-dev libgtk2.0-dev libfm-dev
+	
+Para instalar pelo source:
+Importante: O path: /usr/lib/x86_64-linux-gnu/lxpanel/plugins é o local de instalação dos plugins do LXPanel
+Importante: O path: /usr é o local onde será atualizada a traduação(/usr/share/locale/pt_BR)
+Usei o Eclipse Neon(4.6) para implementar o projeto
+	git clone https://github.com/acamargovieira/launchapps.git
+	cd lxpixelsaver
+	./configure --prefix=/usr --libdir=/usr/lib/x86_64-linux-gnu/lxpanel/plugins
+	make
+	sudo make install
+	
+Para adicionar ao LXPanel:
+	
+
+
+Então você terá
+	
+
+
+Testado no LXPanel versão 0.9.3
+
+Não testado no LXPanel 0.8.2
+
+Não funciona no LXPanel 0.7.2
+
