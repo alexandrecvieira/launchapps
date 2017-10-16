@@ -1,1 +1,1 @@
-### LaunchApps - Application Launcher for LXPanel
+### LaunchApps - Application Launcher Plugin for LXPanel
