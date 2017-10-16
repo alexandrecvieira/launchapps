@@ -140,13 +140,14 @@ static void lapps_iconify_execute(GdkScreen * screen, WindowCommand command) {
 
 static void clicked(GtkWindow *win, GdkEventButton *event, gpointer user_data)
 {
+	gtk_widget_hide_on_delete(GTK_WIDGET(win));
 	GdkScreen* screen = gtk_widget_get_screen(GTK_WIDGET(win));
 	lapps_iconify_execute(screen, WC_NONE);
-	gtk_widget_hide_on_delete(GTK_WIDGET(win));
 }
 
 static gboolean lapps_button_clicked(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
 	LaunchAppsPlugin *lapps = (LaunchAppsPlugin *) user_data;
+	gtk_widget_show_all(lapps->window);
 	GdkScreen* screen = gtk_widget_get_screen(widget);
 	lapps_iconify_execute(screen, WC_ICONIFY);
 	return FALSE;
@@ -160,8 +161,7 @@ static void lapps_destructor(gpointer user_data) {
 
 static GtkWidget *lapps_constructor(LXPanel *panel, config_setting_t *settings) {
 	LaunchAppsPlugin *lapps = g_new0(LaunchAppsPlugin, 1);
-	GtkWidget *p;
-	GtkWidget *icon_box;
+	GtkWidget *p, *icon_box, *button, *box;
 	int i, color_icons;
 
 	lapps->panel = panel;
@@ -194,12 +194,15 @@ static GtkWidget *lapps_constructor(LXPanel *panel, config_setting_t *settings) 
 	gtk_window_set_title (GTK_WINDOW(lapps->window), "LaunchApps");
 	gtk_window_set_opacity (GTK_WINDOW(lapps->window), 0.4);
 	g_signal_connect (G_OBJECT(lapps->window), "delete-event", gtk_main_quit, NULL);
-
 	gtk_widget_set_app_paintable(lapps->window, TRUE);
-
 	gtk_window_set_decorated (GTK_WINDOW(lapps->window), FALSE);
 	gtk_widget_add_events (lapps->window, GDK_BUTTON_PRESS_MASK);
 	g_signal_connect (G_OBJECT(lapps->window), "button-press-event", G_CALLBACK(clicked), (gpointer) lapps);
+	button = gtk_button_new_with_label ("Hello World");
+	box = gtk_hbox_new (TRUE, 1);
+	gtk_box_pack_start (GTK_BOX (box), button, 0, 0, 0);
+	gtk_container_add (GTK_CONTAINER (lapps->window), box);
+	// gtk_widget_show (button);
 
 	lapps_set_icons_size(lapps);
 
