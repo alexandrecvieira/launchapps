@@ -119,10 +119,11 @@ static void clicked(GtkWindow *win, GdkEventButton *event, gpointer user_data)
 	lapps_iconify_execute(screen, WC_NONE);
 }
 
-static gboolean lapps_exec(GtkWindow *app_item, GdkEventButton *event, gpointer user_data) {
-	gtk_widget_hide_on_delete(GTK_WIDGET(win));
-	GError **error;
-	return g_app_info_launch(app_item, NULL, NULL, error);
+static void lapps_exec(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
+	// gtk_widget_hide_on_delete(GTK_WIDGET(app_item));
+	//GError **error;
+	GAppInfo *app = (GAppInfo *) user_data;
+	g_app_info_launch(app, NULL, NULL, NULL);
 }
 
 static gboolean lapps_button_clicked(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
@@ -165,7 +166,7 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 					g_strconcat(g_app_info_get_id(l->data), " - ", g_app_info_get_name(l->data), " - ",
 							g_app_info_get_display_name(l->data), " - ", g_icon_to_string(g_app_info_get_icon(l->data)),
 							NULL));
-			g_signal_connect(G_OBJECT(item), "button-press-event", G_CALLBACK(clicked), (gpointer) lapps);
+			g_signal_connect(G_OBJECT(item), "button-press-event", G_CALLBACK(lapps_exec), (gpointer)l->data);
 			gtk_container_add(GTK_CONTAINER(list), item);
 		}
 	}
