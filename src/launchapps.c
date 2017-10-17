@@ -52,32 +52,6 @@ typedef struct {
 	char *version;
 } LaunchAppsPlugin;
 
-/*
-GtkWidget *app_list = gtk_list_new();
-	GList *app_names;
-
-	int nIndex;
-	GList *node;
-	GList *list = lapps_applications_list();
-	for (nIndex = 0; node < g_list_nth(list, nIndex) - 20; nIndex++) {
-		app_names = g_list_append (app_names, (char *) g_app_info_get_name(node->data));
-	}
-
-	gtk_list_append_items(GTK_LIST(app_list), app_names);
-
-	GtkWidget *box = gtk_vbox_new(TRUE, 1);
-
-	gtk_container_add(GTK_CONTAINER(box), app_list);
-
-	gtk_container_add(GTK_CONTAINER(lapps->window), box);
-
-	gtk_widget_show_all(lapps->window);
-*/
-
-static GList * lapps_applications_list() { /* https://developer.gnome.org/gio/stable/GAppInfo.html */
-	return g_app_info_get_all();
-}
-
 static void lapps_set_icons_size(LaunchAppsPlugin *lapps) {
 	GdkScreen *screen = gdk_screen_get_default();
 	gint s_height = gdk_screen_get_height(screen);
@@ -145,12 +119,62 @@ static void clicked(GtkWindow *win, GdkEventButton *event, gpointer user_data)
 	lapps_iconify_execute(screen, WC_NONE);
 }
 
+static gboolean lapps_exec(GtkWindow *app_item, GdkEventButton *event, gpointer user_data) {
+	gtk_widget_hide_on_delete(GTK_WIDGET(win));
+	GError **error;
+	return g_app_info_launch(app_item, NULL, NULL, error);
+}
+
 static gboolean lapps_button_clicked(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
 	LaunchAppsPlugin *lapps = (LaunchAppsPlugin *) user_data;
 	gtk_widget_show_all(lapps->window);
 	GdkScreen* screen = gtk_widget_get_screen(widget);
 	lapps_iconify_execute(screen, WC_ICONIFY);
 	return FALSE;
+}
+
+static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
+	GtkWidget *box, *list;
+
+	// main window
+	lapps->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	gtk_window_set_type_hint(GTK_WINDOW(lapps->window), GDK_WINDOW_TYPE_HINT_NORMAL);
+	gtk_window_maximize(GTK_WINDOW(lapps->window));
+	gtk_window_stick(GTK_WINDOW(lapps->window));
+	gtk_window_set_skip_pager_hint(GTK_WINDOW(lapps->window), TRUE);
+	gtk_window_set_skip_taskbar_hint(GTK_WINDOW(lapps->window), TRUE);
+	gtk_window_set_title(GTK_WINDOW(lapps->window), "LaunchApps");
+	gtk_window_set_opacity(GTK_WINDOW(lapps->window), 0.4);
+	g_signal_connect(G_OBJECT(lapps->window), "delete-event", gtk_main_quit, NULL);
+	gtk_widget_set_app_paintable(lapps->window, TRUE);
+	gtk_window_set_decorated(GTK_WINDOW(lapps->window), FALSE);
+	gtk_widget_add_events(lapps->window, GDK_BUTTON_PRESS_MASK);
+	g_signal_connect(G_OBJECT(lapps->window), "button-press-event", G_CALLBACK(clicked), (gpointer) lapps);
+
+	// box
+	box = gtk_hbox_new(TRUE, 1);
+
+	// list
+	list = gtk_list_new();
+	GList *app_list = g_app_info_get_all();
+	GList *l;
+	GtkWidget *item;
+	for (l = app_list; l != NULL; l = l->next) {
+		if (g_icon_to_string(g_app_info_get_icon(l->data))) {
+			item = gtk_list_item_new_with_label(
+					g_strconcat(g_app_info_get_id(l->data), " - ", g_app_info_get_name(l->data), " - ",
+							g_app_info_get_display_name(l->data), " - ", g_icon_to_string(g_app_info_get_icon(l->data)),
+							NULL));
+			g_signal_connect(G_OBJECT(item), "button-press-event", G_CALLBACK(clicked), (gpointer) lapps);
+			gtk_container_add(GTK_CONTAINER(list), item);
+		}
+	}
+	gtk_box_pack_start(GTK_BOX(box), list, 0, 0, 0);
+
+	// add box to window
+	gtk_container_add(GTK_CONTAINER(lapps->window), box);
+
+	lapps_set_icons_size(lapps);
 }
 
 static void lapps_destructor(gpointer user_data) {
@@ -161,7 +185,7 @@ static void lapps_destructor(gpointer user_data) {
 
 static GtkWidget *lapps_constructor(LXPanel *panel, config_setting_t *settings) {
 	LaunchAppsPlugin *lapps = g_new0(LaunchAppsPlugin, 1);
-	GtkWidget *p, *icon_box, *button, *box;
+	GtkWidget *p, *icon_box;
 	int i, color_icons;
 
 	lapps->panel = panel;
@@ -185,26 +209,8 @@ static GtkWidget *lapps_constructor(LXPanel *panel, config_setting_t *settings) 
 	gtk_container_add(GTK_CONTAINER(icon_box), lapps->icon_image);
 	gtk_widget_show(lapps->icon_image);
 
-	lapps->window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-	gtk_window_set_type_hint (GTK_WINDOW(lapps->window), GDK_WINDOW_TYPE_HINT_NORMAL);
-	gtk_window_maximize (GTK_WINDOW(lapps->window));
-	gtk_window_stick (GTK_WINDOW(lapps->window));
-	gtk_window_set_skip_pager_hint (GTK_WINDOW(lapps->window), TRUE);
-	gtk_window_set_skip_taskbar_hint (GTK_WINDOW(lapps->window), TRUE);
-	gtk_window_set_title (GTK_WINDOW(lapps->window), "LaunchApps");
-	gtk_window_set_opacity (GTK_WINDOW(lapps->window), 0.4);
-	g_signal_connect (G_OBJECT(lapps->window), "delete-event", gtk_main_quit, NULL);
-	gtk_widget_set_app_paintable(lapps->window, TRUE);
-	gtk_window_set_decorated (GTK_WINDOW(lapps->window), FALSE);
-	gtk_widget_add_events (lapps->window, GDK_BUTTON_PRESS_MASK);
-	g_signal_connect (G_OBJECT(lapps->window), "button-press-event", G_CALLBACK(clicked), (gpointer) lapps);
-	button = gtk_button_new_with_label ("Hello World");
-	box = gtk_hbox_new (TRUE, 1);
-	gtk_box_pack_start (GTK_BOX (box), button, 0, 0, 0);
-	gtk_container_add (GTK_CONTAINER (lapps->window), box);
-	// gtk_widget_show (button);
-
-	lapps_set_icons_size(lapps);
+	// main window
+	lapps_create_main_window(lapps);
 
 	return p;
 }
