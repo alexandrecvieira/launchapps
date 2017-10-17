@@ -112,31 +112,35 @@ static void lapps_iconify_execute(GdkScreen * screen, WindowCommand command) {
 	XFree(client_list);
 }
 
-static void clicked(GtkWindow *win, GdkEventButton *event, gpointer user_data)
+static void lapps_main_window_clicked(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
-	gtk_widget_hide_on_delete(GTK_WIDGET(win));
-	GdkScreen* screen = gtk_widget_get_screen(GTK_WIDGET(win));
+	LaunchAppsPlugin *lapps = (LaunchAppsPlugin *) user_data;
+	gtk_widget_hide_on_delete(GTK_WIDGET(lapps->window));
+	GdkScreen *screen = gtk_widget_get_screen(GTK_WIDGET(lapps->window));
 	lapps_iconify_execute(screen, WC_NONE);
 }
 
+static void lapps_main_window_close(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
+{
+	LaunchAppsPlugin *lapps = (LaunchAppsPlugin *) user_data;
+	gtk_widget_hide_on_delete(GTK_WIDGET(lapps->window));
+}
+
 static void lapps_exec(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
-	// gtk_widget_hide_on_delete(GTK_WIDGET(app_item));
-	//GError **error;
 	GAppInfo *app = (GAppInfo *) user_data;
 	g_app_info_launch(app, NULL, NULL, NULL);
+	g_free(app);
 }
 
 static gboolean lapps_button_clicked(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
 	LaunchAppsPlugin *lapps = (LaunchAppsPlugin *) user_data;
 	gtk_widget_show_all(lapps->window);
-	GdkScreen* screen = gtk_widget_get_screen(widget);
+	GdkScreen* screen = gtk_widget_get_screen(lapps->window);
 	lapps_iconify_execute(screen, WC_ICONIFY);
 	return FALSE;
 }
 
 static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
-	GtkWidget *box, *list;
-
 	// main window
 	lapps->window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_type_hint(GTK_WINDOW(lapps->window), GDK_WINDOW_TYPE_HINT_NORMAL);
@@ -150,13 +154,13 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 	gtk_widget_set_app_paintable(lapps->window, TRUE);
 	gtk_window_set_decorated(GTK_WINDOW(lapps->window), FALSE);
 	gtk_widget_add_events(lapps->window, GDK_BUTTON_PRESS_MASK);
-	g_signal_connect(G_OBJECT(lapps->window), "button-press-event", G_CALLBACK(clicked), (gpointer) lapps);
+	g_signal_connect(G_OBJECT(lapps->window), "button-press-event", G_CALLBACK(lapps_main_window_clicked), (gpointer) lapps);
 
 	// box
-	box = gtk_hbox_new(TRUE, 1);
+	GtkWidget *box = gtk_hbox_new(TRUE, 1);
 
 	// list
-	list = gtk_list_new();
+	GtkWidget *list = gtk_list_new();
 	GList *app_list = g_app_info_get_all();
 	GList *l;
 	GtkWidget *item;
@@ -167,6 +171,7 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 							g_app_info_get_display_name(l->data), " - ", g_icon_to_string(g_app_info_get_icon(l->data)),
 							NULL));
 			g_signal_connect(G_OBJECT(item), "button-press-event", G_CALLBACK(lapps_exec), (gpointer)l->data);
+			g_signal_connect(G_OBJECT(item), "button-release-event", G_CALLBACK(lapps_main_window_close), (gpointer) lapps);
 			gtk_container_add(GTK_CONTAINER(list), item);
 		}
 	}
@@ -180,7 +185,7 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 
 static void lapps_destructor(gpointer user_data) {
 	LaunchAppsPlugin *lapps = (LaunchAppsPlugin *) user_data;
-	g_signal_handlers_disconnect_by_func(lapps->window, clicked, lapps);
+	g_signal_handlers_disconnect_by_func(lapps->window, lapps_main_window_clicked, lapps);
 	g_free(lapps);
 }
 
@@ -205,7 +210,7 @@ static GtkWidget *lapps_constructor(LXPanel *panel, config_setting_t *settings) 
 
 	lapps->icon_image = lxpanel_image_new_for_icon(panel, "launchapps.png", -1, NULL);
 
-	g_signal_connect(icon_box, "button_press_event", G_CALLBACK(lapps_button_clicked), (gpointer) lapps);
+	g_signal_connect(icon_box, "button_press_event", G_CALLBACK(lapps_button_clicked), (gpointer )lapps);
 
 	gtk_container_add(GTK_CONTAINER(icon_box), lapps->icon_image);
 	gtk_widget_show(lapps->icon_image);
