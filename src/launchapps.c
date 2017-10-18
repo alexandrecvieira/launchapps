@@ -59,7 +59,6 @@ typedef struct {
 } LaunchAppsPlugin;
 
 static void lapps_get_wallpaper() {
-	gchar ch;
 	FILE *file;
 
 	gsize length;
@@ -90,6 +89,8 @@ static char *lapps_get_wallpaper_conf_path() {
 		conf_url = g_strdup(g_strconcat(g_strdup(homedir), "/.config/pcmanfm/LXDE/desktop-items-0.conf", NULL));
 	else
 		conf_url = g_strdup(g_strconcat(g_strdup(homedir), "/.config/pcmanfm/lubuntu/desktop-items-0.conf", NULL));
+
+	g_free(homedir);
 
 	return conf_url;
 }
@@ -162,18 +163,13 @@ static void lapps_iconify_execute(GdkScreen * screen, WindowCommand command) {
 	XFree(client_list);
 }
 
-static void lapps_main_window_clicked(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
+static void lapps_item_clicked_window_close(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
-	//LaunchAppsPlugin *lapps = (LaunchAppsPlugin *) user_data;
 	gtk_widget_destroy(window);
-	GdkScreen *screen = gtk_widget_get_screen(widget);
-	//lapps_iconify_execute(screen, LA_NONE);
 }
 
 static void lapps_main_window_close(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
-	//LaunchAppsPlugin *lapps = (LaunchAppsPlugin *) user_data;
-	//gtk_widget_hide_on_delete (window);
 	gtk_widget_destroy(window);
 }
 
@@ -193,12 +189,10 @@ static void lapps_create_main_window() {
 	gtk_window_set_skip_taskbar_hint(GTK_WINDOW(window), TRUE);
 	gtk_window_set_keep_above (GTK_WINDOW(window), TRUE);
 	gtk_window_set_title(GTK_WINDOW(window), "LaunchApps");
-	// gtk_window_set_opacity(GTK_WINDOW(window), 0.4);
-	// g_signal_connect(G_OBJECT(lapps->window), "delete-event", gtk_widget_hide_on_delete, NULL);
 	gtk_widget_set_app_paintable(window, TRUE);
 	gtk_window_set_decorated(GTK_WINDOW(window), FALSE);
 	gtk_widget_add_events(window, GDK_BUTTON_PRESS_MASK);
-	g_signal_connect(G_OBJECT(window), "button-press-event", G_CALLBACK(lapps_main_window_clicked), NULL);
+	g_signal_connect(G_OBJECT(window), "button-press-event", G_CALLBACK(lapps_main_window_close), NULL);
 
 	// background
 	GtkWidget *layout, *image;
@@ -206,6 +200,28 @@ static void lapps_create_main_window() {
 	gtk_container_add(GTK_CONTAINER (window), layout);
 	image = gtk_image_new_from_file(lapps_wallpaper);
 	gtk_layout_put(GTK_LAYOUT(layout), image, 0, 0);
+	// gtk_window_set_opacity(GTK_WINDOW(window), 0.4);
+
+	//gchar *css = (gchar *) malloc((strlen(lapps_wallpaper) + 55) * sizeof(gchar));
+	//sprintf(css, "GtkWindow{\nbackground-image: url('%s');\n}\n", lapps_wallpaper);
+	/*
+	 * Create a css provider and add pass css data to it
+	 */
+	//GtkCssProvider *provider = gtk_css_provider_new();
+	//gtk_css_provider_load_from_data(provider, css, -1, NULL);
+	/*
+	 * Bind the css provider for the current display
+	 */
+	//GdkDisplay *display = gdk_display_get_default();
+	//GdkScreen *screen = gdk_display_get_default_screen(display);
+	//gtk_style_context_add_provider_for_screen(screen, GTK_STYLE_PROVIDER(provider),
+	//		GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+	/*
+	 * Free the used memory...
+	 */
+//	g_object_unref(provider);
+//	g_free(css);
+
 
 	// box
 	GtkWidget *box = gtk_hbox_new(TRUE, 1);
@@ -222,38 +238,33 @@ static void lapps_create_main_window() {
 							g_app_info_get_display_name(l->data), " - ", g_icon_to_string(g_app_info_get_icon(l->data)),
 							NULL));
 			g_signal_connect(G_OBJECT(item), "button-press-event", G_CALLBACK(lapps_exec), (gpointer)l->data);
-			g_signal_connect(G_OBJECT(item), "button-release-event", G_CALLBACK(lapps_main_window_close), NULL);
+			g_signal_connect(G_OBJECT(item), "button-release-event", G_CALLBACK(lapps_item_clicked_window_close), NULL);
 			gtk_container_add(GTK_CONTAINER(list), item);
 		}
 	}
 	gtk_box_pack_start(GTK_BOX(box), list, 0, 0, 0);
 
 	// add box to window
-	gtk_container_add(GTK_CONTAINER(window), box);
+	gtk_container_add(GTK_CONTAINER(layout), box);
 	gtk_widget_show_all(window);
 	gtk_main();
-
-	//lapps_set_icons_size(lapps);
 }
 
 static gboolean lapps_button_clicked(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
-	//LaunchAppsPlugin *lapps = (LaunchAppsPlugin *) user_data;
-	GdkScreen* screen = gtk_widget_get_screen(widget);
-	// lapps_iconify_execute(screen, LA_NONE);
-	//gtk_widget_show_all(lapps->window);
-	// lapps_create_main_window();
-	// lapps_iconify_execute(screen, LA_ICONIFY);
 	if(wallpaper_conf_url == NULL)
 			wallpaper_conf_url = g_strdup(lapps_get_wallpaper_conf_path());
 
 	lapps_get_wallpaper();
 	lapps_create_main_window();
+	gtk_window_deiconify(GTK_WINDOW(window));
 	return FALSE;
 }
 
 static void lapps_destructor(gpointer user_data) {
 	LaunchAppsPlugin *lapps = (LaunchAppsPlugin *) user_data;
-	g_signal_handlers_disconnect_by_func(window, lapps_main_window_clicked, NULL);
+	g_signal_handlers_disconnect_by_func(window, lapps_main_window_close, NULL);
+	g_free(wallpaper_conf_url);
+	g_free(lapps_wallpaper);
 	g_free(lapps);
 }
 
