@@ -45,7 +45,6 @@ PKG_CHECK_MODULES(GTK2, [gtk+-2.0])
 PKG_CHECK_MODULES(GLIB2, [glib-2.0])
 PKG_CHECK_MODULES(LIBFM, [libfm])
 PKG_CHECK_MODULES(GIO2, [gio-2.0])
-# PKG_CHECK_MODULES(LIBNOTIFY, [libnotify])
 AC_CHECK_FUNCS([strstr])
 
 ac_version_subst_str=`echo $VERSION | awk -F '.' '/.*/ { printf "VERSION_MAJOR=%d VERSION_MINOR=%d VERSION_MICRO=%d", $1, $2, $3 }'`
@@ -54,5 +53,5 @@ AC_SUBST(VERSION_MAJOR)
 AC_SUBST(VERSION_MINOR)
 AC_SUBST(VERSION_MICRO)
 
-AC_CONFIG_FILES(Makefile src/Makefile images/Makefile) # po/Makefile.in intl/Makefile)
+AC_CONFIG_FILES(Makefile src/Makefile images/Makefile)
 AC_OUTPUT

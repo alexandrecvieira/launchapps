@@ -30,6 +30,9 @@
 
 #include <gtk/gtk.h>
 #include <gio/gio.h>
+#include <glib.h>
+#include <glib-object.h>
+
 #include <X11/X.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -47,6 +50,7 @@ typedef enum {
 } WindowCommand;
 
 GtkWidget *window;
+gchar *lapps_icon = "launchapps.png";
 gchar *wallpaper_conf_url;
 gchar *lapps_wallpaper;
 gboolean running = FALSE;
@@ -55,34 +59,17 @@ typedef struct {
 	LXPanel *panel;
 	config_setting_t *settings;
 	GtkWidget *icon_image;
-	gint icon_size;
-	char *version;
+	// gint icon_size;
+	// char *version;
 } LaunchAppsPlugin;
 
-static void lapps_activate(Window client)
-{
-	XEvent ev;
-	ev.xclient.type = ClientMessage;
-	ev.xclient.window = client;
-	ev.xclient.message_type = XInternAtom(GDK_DISPLAY(), "_NET_ACTIVE_WINDOW", True);
-	ev.xclient.format = 32;
-	ev.xclient.data.l[0]  = 1;
-	ev.xclient.data.l[1] = CurrentTime;
-	ev.xclient.data.l[2] = ev.xclient.data.l[3] = ev.xclient.data.l[4] = 0;
-	XSendEvent (GDK_DISPLAY(), RootWindow(GDK_DISPLAY(), XDefaultScreen(GDK_DISPLAY())), False,
-	  SubstructureRedirectMask |SubstructureNotifyMask, (XEvent*)&ev);
-	XFlush (GDK_DISPLAY());
-}
-
 static void lapps_get_wallpaper() {
-	FILE *file;
-
 	gsize length;
 	gchar *content, *test, **wallpaper;
 
 	if (g_file_test(wallpaper_conf_url, G_FILE_TEST_EXISTS)) {
 		if (g_file_get_contents(wallpaper_conf_url, &content, &length, NULL)) {
-			test = g_strrstr(content, "wallpaper=");
+			test = g_strrstr(g_strdup(content), "wallpaper=");
 			test += 10;
 			wallpaper = g_strsplit(test, "\n", -1);
 			lapps_wallpaper = strdup(*wallpaper);
@@ -92,7 +79,7 @@ static void lapps_get_wallpaper() {
 	}
 }
 
-static char *lapps_get_wallpaper_conf_path() {
+static void lapps_get_wallpaper_conf_path() {
 	gchar *homedir;
 	gchar *conf_url;
 
@@ -102,16 +89,14 @@ static char *lapps_get_wallpaper_conf_path() {
 
 	int ls = system("ls ~/.config/pcmanfm/LXDE/desktop-items-0.conf");
 	if (ls == 0)
-		conf_url = g_strdup(g_strconcat(g_strdup(homedir), "/.config/pcmanfm/LXDE/desktop-items-0.conf", NULL));
+		wallpaper_conf_url = g_strdup(g_strconcat(g_strdup(homedir), "/.config/pcmanfm/LXDE/desktop-items-0.conf", NULL));
 	else
-		conf_url = g_strdup(g_strconcat(g_strdup(homedir), "/.config/pcmanfm/lubuntu/desktop-items-0.conf", NULL));
+		wallpaper_conf_url = g_strdup(g_strconcat(g_strdup(homedir), "/.config/pcmanfm/lubuntu/desktop-items-0.conf", NULL));
 
 	g_free(homedir);
-
-	return conf_url;
 }
 
-static void lapps_set_icons_size(LaunchAppsPlugin *lapps) {
+/*static void lapps_set_icons_size(LaunchAppsPlugin *lapps) {
 	GdkScreen *screen = gdk_screen_get_default();
 	gint s_height = gdk_screen_get_height(screen);
 	gint s_width = gdk_screen_get_width(screen);
@@ -125,76 +110,22 @@ static void lapps_set_icons_size(LaunchAppsPlugin *lapps) {
 	} else if (suggested_size >= 56) {
 		lapps->icon_size = 64;
 	}
-}
+}*/
 
-static void lapps_iconify_execute(GdkScreen * screen, WindowCommand command) {
-	/* Get the list of all windows. */
-	int client_count;
-	Screen * xscreen = GDK_SCREEN_XSCREEN(screen);
-	Window * client_list = get_xaproperty(RootWindowOfScreen(xscreen), a_NET_CLIENT_LIST, XA_WINDOW, &client_count);
-	Display *xdisplay = DisplayOfScreen(xscreen);
-	//Window * wlapps;
-	//char * nlapps = NULL;
-	if (client_list != NULL) {
-		/* Loop over all windows. */
-		int current_desktop = get_net_current_desktop();
-		int i;
-		for (i = 0; i < client_count; i++) {
-			/* Get the desktop and window type properties. */
-			NetWMWindowType nwwt;
-			int task_desktop = get_net_wm_desktop(client_list[i]);
-			get_net_wm_window_type(client_list[i], &nwwt);
-			//wlapps = &client_list[i];
-			/*if (wlapps != NULL) {
-				nlapps = get_utf8_property(*wlapps, a_NET_WM_VISIBLE_NAME);
-
-				if (nlapps == NULL) {
-					nlapps = get_utf8_property(*wlapps, a_NET_WM_NAME);
-				}
-
-				if (nlapps == NULL) {
-					nlapps = get_textproperty(*wlapps, XA_WM_NAME);
-				}
-			}*/
-			/* If the task is visible on the current desktop and it is an ordinary window,
-			 * execute the requested Iconify. */
-
-			//openlog("launchapps", LOG_PID | LOG_CONS, LOG_USER);
-			//		syslog(LOG_INFO, " ");
-			//		syslog(LOG_INFO, "nlapps: %s", nlapps);
-			//		syslog(LOG_INFO, " ");
-			//		closelog();
-
-			//if ((g_strcmp0(nlapps, "LaunchApps") != 0 || (g_strcmp0(nlapps, "launchapps") != 0 ))
-					//&&
-					if(((task_desktop == -1) || (task_desktop == current_desktop))
-							&& ((!nwwt.dock) && (!nwwt.desktop) && (!nwwt.splash))) {
-				if (command == LA_ICONIFY)
-					XIconifyWindow(xdisplay, client_list[i], DefaultScreen(xdisplay));
-				if (command == LA_NONE)
-					XMapWindow(xdisplay, client_list[i]);
-			}
-		}
-	}
-	XFree(client_list);
+static void lapps_main_window_close(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
+{
+	gtk_widget_destroy(window);
+	running = FALSE;
 }
 
 static void lapps_item_clicked_window_close(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
-	//gtk_widget_destroy(window);
-	gtk_widget_hide_on_delete(window);
-	running = FALSE;
-}
-
-static void lapps_main_window_close(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
-{
-	//gtk_widget_destroy(window);
-	gtk_widget_hide_on_delete(window);
+	gtk_widget_destroy(window);
 	running = FALSE;
 }
 
 static void lapps_exec(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
-	GAppInfo *app = (GAppInfo *) user_data;
+	GAppInfo *app = g_app_info_dup((GAppInfo *) user_data);
 	g_app_info_launch(app, NULL, NULL, NULL);
 	g_free(app);
 }
@@ -205,16 +136,14 @@ static void lapps_create_main_window() {
 	gtk_window_set_type_hint(GTK_WINDOW(window), GDK_WINDOW_TYPE_HINT_NORMAL);
 	gtk_window_maximize(GTK_WINDOW(window));
 	gtk_window_stick(GTK_WINDOW(window));
-	//gtk_window_set_skip_pager_hint(GTK_WINDOW(window), TRUE);
-	//gtk_window_set_skip_taskbar_hint(GTK_WINDOW(window), TRUE);
-	//gtk_window_set_keep_above (GTK_WINDOW(window), TRUE);
-	gtk_window_set_title(GTK_WINDOW(window), "LaunchApps");
+	gtk_window_set_title(GTK_WINDOW(window), "Launch Apps");
 	gtk_widget_set_app_paintable(window, TRUE);
 	gtk_window_set_decorated(GTK_WINDOW(window), FALSE);
+	gtk_window_set_icon_from_file(GTK_WINDOW(window), g_strconcat("/usr/share/lxpanel/images/", lapps_icon, NULL), NULL);
 	gtk_widget_add_events(window, GDK_BUTTON_PRESS_MASK);
 	gtk_widget_add_events(window, GDK_UNMAP);
 	g_signal_connect(G_OBJECT(window), "button-press-event", G_CALLBACK(lapps_main_window_close), NULL);
-	g_signal_connect(G_OBJECT(window), "unmap-event", G_CALLBACK(lapps_main_window_close), NULL);
+	g_signal_connect(G_OBJECT(window), "delete-event", gtk_main_quit, NULL);
 
 	// background
 	GtkWidget *layout, *image;
@@ -222,28 +151,6 @@ static void lapps_create_main_window() {
 	gtk_container_add(GTK_CONTAINER (window), layout);
 	image = gtk_image_new_from_file(lapps_wallpaper);
 	gtk_layout_put(GTK_LAYOUT(layout), image, 0, 0);
-	// gtk_window_set_opacity(GTK_WINDOW(window), 0.4);
-
-	//gchar *css = (gchar *) malloc((strlen(lapps_wallpaper) + 55) * sizeof(gchar));
-	//sprintf(css, "GtkWindow{\nbackground-image: url('%s');\n}\n", lapps_wallpaper);
-	/*
-	 * Create a css provider and add pass css data to it
-	 */
-	//GtkCssProvider *provider = gtk_css_provider_new();
-	//gtk_css_provider_load_from_data(provider, css, -1, NULL);
-	/*
-	 * Bind the css provider for the current display
-	 */
-	//GdkDisplay *display = gdk_display_get_default();
-	//GdkScreen *screen = gdk_display_get_default_screen(display);
-	//gtk_style_context_add_provider_for_screen(screen, GTK_STYLE_PROVIDER(provider),
-	//		GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-	/*
-	 * Free the used memory...
-	 */
-//	g_object_unref(provider);
-//	g_free(css);
-
 
 	// box
 	GtkWidget *box = gtk_hbox_new(TRUE, 1);
@@ -254,7 +161,7 @@ static void lapps_create_main_window() {
 	GList *l;
 	GtkWidget *item;
 	for (l = app_list; l != NULL; l = l->next) {
-		if (g_icon_to_string(g_app_info_get_icon(l->data))) {
+		if (g_app_info_get_icon(l->data) != NULL) {
 			item = gtk_list_item_new_with_label(
 					g_strconcat(g_app_info_get_id(l->data), " - ", g_app_info_get_name(l->data), " - ",
 							g_app_info_get_display_name(l->data), " - ", g_icon_to_string(g_app_info_get_icon(l->data)),
@@ -266,39 +173,22 @@ static void lapps_create_main_window() {
 	}
 	gtk_box_pack_start(GTK_BOX(box), list, 0, 0, 0);
 
-	// add box to window
+	// add box to layout
 	gtk_container_add(GTK_CONTAINER(layout), box);
-	// gtk_widget_show_all(window);
-	// gtk_main();
+	gtk_widget_show_all(window);
+	gtk_main();
 }
 
-static gboolean lapps_button_clicked(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
+static void lapps_button_clicked(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
 	if (!running) {
-		if (wallpaper_conf_url == NULL)
-			wallpaper_conf_url = g_strdup(lapps_get_wallpaper_conf_path());
-
+		running = TRUE;
 		lapps_get_wallpaper();
-		//lapps_create_main_window();
-
-		gtk_widget_show_all(window);
-
-		//gtk_window_activate_default(GTK_WINDOW(window));
-		// lapps_activate(GDK_WINDOW_XID(gtk_widget_get_window(GTK_WIDGET(window))));
-
-		//Screen * xscreen = GDK_SCREEN_XSCREEN(gtk_widget_get_screen(window));
-		//Display *xdisplay = DisplayOfScreen(xscreen);
-		//XMapWindow(xdisplay, GDK_WINDOW_XID(gtk_widget_get_window(GTK_WIDGET(window))));
-		//running = TRUE;
+		lapps_create_main_window();
 	}
-
-	return FALSE;
 }
 
 static void lapps_destructor(gpointer user_data) {
 	LaunchAppsPlugin *lapps = (LaunchAppsPlugin *) user_data;
-	g_signal_handlers_disconnect_by_func(window, lapps_main_window_close, NULL);
-	g_free(wallpaper_conf_url);
-	g_free(lapps_wallpaper);
 	g_free(lapps);
 }
 
@@ -321,14 +211,15 @@ static GtkWidget *lapps_constructor(LXPanel *panel, config_setting_t *settings) 
 	gtk_container_add(GTK_CONTAINER(p), icon_box);
 	gtk_widget_show(icon_box);
 
-	lapps->icon_image = lxpanel_image_new_for_icon(panel, "launchapps.png", -1, NULL);
+	lapps->icon_image = lxpanel_image_new_for_icon(panel, lapps_icon, -1, NULL);
 
-	g_signal_connect(icon_box, "button_press_event", G_CALLBACK(lapps_button_clicked), NULL);
+	g_signal_connect(icon_box, "button_press_event", G_CALLBACK(lapps_button_clicked), (gpointer) lapps);
 
 	gtk_container_add(GTK_CONTAINER(icon_box), lapps->icon_image);
 	gtk_widget_show(lapps->icon_image);
 
-	lapps_create_main_window();
+	if (wallpaper_conf_url == NULL)
+		lapps_get_wallpaper_conf_path();
 
 	return p;
 }
