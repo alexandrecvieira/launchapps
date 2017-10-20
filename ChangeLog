@@ -1,6 +1,7 @@
 
 2017-10-19  Alexandre C Vieira <acamargo.vieira@gmail.com>
 
+	* Mudando de grid para tabela, primeiro teste bem sucedido
 	* Testado icon lookups com sucesso
 	* Lista de aplicações funcionando sem crash, iniciando desenvolvimento do grid de ícones
 	* Tentando resolver problema de segment fault ao abrir duas instancias da mesma aplicação

@@ -55,6 +55,8 @@ gchar *wallpaper_conf_url;
 gchar *lapps_wallpaper;
 gboolean running = FALSE;
 gint icon_size;
+gint s_height;
+gint s_width;
 // grid[0] = rows | grid[1] = columns
 gint grid[2];
 
@@ -100,8 +102,8 @@ static void lapps_get_wallpaper_conf_path() {
 
 static void lapps_set_icons_size() {
 	GdkScreen *screen = gdk_screen_get_default();
-	gint s_height = gdk_screen_get_height(screen);
-	gint s_width = gdk_screen_get_width(screen);
+	s_height = gdk_screen_get_height(screen);
+	s_width = gdk_screen_get_width(screen);
 	double suggested_size = (pow(s_width * s_height, ((double) (1.0 / 3.0))) / 1.6);
 
 	if (suggested_size < 27) {
@@ -141,47 +143,71 @@ static void lapps_exec(GtkWidget *widget, GdkEventButton *event, gpointer user_d
 	g_free(app);
 }
 
-static gchar *lapps_icon_filename(GAppInfo *appinfo) {
-	gchar *filename;
+static GdkPixbuf *lapps_application_icon(GAppInfo *appinfo) {
+	//gchar *filename;
+	GdkPixbuf *icon;
 	GtkIconInfo *icon_info;
 	GIcon *g_icon = g_app_info_get_icon(G_APP_INFO(appinfo));
 	GtkIconTheme *icon_theme = gtk_icon_theme_get_default();
-	icon_info = gtk_icon_theme_lookup_by_gicon(icon_theme, g_icon, icon_size, GTK_ICON_LOOKUP_USE_BUILTIN);
-	filename = g_strdup(gtk_icon_info_get_filename(icon_info));
-	return filename;
+	openlog("LaunchApps", LOG_PID|LOG_CONS, LOG_USER);
+	        syslog(LOG_INFO, " ");
+	        syslog(LOG_INFO, "AppName: %s", g_strconcat(g_strdup(g_app_info_get_executable(appinfo))," --- ", g_icon_to_string(g_app_info_get_icon(appinfo)),NULL));
+	        syslog(LOG_INFO, " ");
+	        closelog();
+	//icon_info = gtk_icon_theme_lookup_icon (icon_theme, g_strdup(g_app_info_get_executable(appinfo)), icon_size, GTK_ICON_LOOKUP_USE_BUILTIN);
+	//if(icon_info == NULL)
+		icon_info = gtk_icon_theme_lookup_by_gicon(icon_theme, g_icon, 256, GTK_ICON_LOOKUP_USE_BUILTIN);
+	//filename = g_strdup(gtk_icon_info_get_filename(icon_info));
+	icon = gtk_icon_info_load_icon (icon_info, NULL);
+	return icon;
 }
 
 static void lapps_create_main_window() {
 	// main window
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_type_hint(GTK_WINDOW(window), GDK_WINDOW_TYPE_HINT_NORMAL);
-	gtk_window_maximize(GTK_WINDOW(window));
+	gtk_window_fullscreen(GTK_WINDOW(window));
 	gtk_window_stick(GTK_WINDOW(window));
+	gtk_window_set_keep_above(GTK_WINDOW(window), TRUE);
 	gtk_window_set_title(GTK_WINDOW(window), "Launch Apps");
 	gtk_widget_set_app_paintable(window, TRUE);
 	gtk_window_set_decorated(GTK_WINDOW(window), FALSE);
-	gtk_container_set_border_width(GTK_CONTAINER(window), 10);
+	// gtk_container_set_border_width(GTK_CONTAINER(window), 3);
 	gtk_window_set_icon_from_file(GTK_WINDOW(window), g_strconcat("/usr/share/lxpanel/images/", lapps_icon, NULL), NULL);
 	gtk_widget_add_events(window, GDK_BUTTON_PRESS_MASK);
-	gtk_widget_add_events(window, GDK_UNMAP);
 	g_signal_connect(G_OBJECT(window), "button-press-event", G_CALLBACK(lapps_main_window_close), NULL);
 	g_signal_connect(G_OBJECT(window), "delete-event", gtk_main_quit, NULL);
 
 	// background
-	GtkWidget *layout, *image;
+	GtkWidget *layout;
+	GtkWidget *image;
+	GdkPixbuf *image_pix, *target_image_pix;
+	image_pix = gdk_pixbuf_new_from_file(lapps_wallpaper, NULL);
 	layout = gtk_layout_new(NULL, NULL);
-	gtk_container_add(GTK_CONTAINER (window), layout);
-	image = gtk_image_new_from_file(lapps_wallpaper);
+	// GtkWidget *bg_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	//gtk_window_set_type_hint(GTK_WINDOW(bg_window), GDK_WINDOW_TYPE_HINT_NORMAL);
+	//gtk_window_fullscreen(GTK_WINDOW(bg_window));
+	//gtk_window_set_opacity(GTK_WINDOW(bg_window), 0.5);
+	gtk_container_add(GTK_CONTAINER(window), layout);
+	//gtk_container_add(GTK_CONTAINER(window), bg_window);
+	target_image_pix = gdk_pixbuf_scale_simple(image_pix, s_width, s_height, GDK_INTERP_BILINEAR);
+	image = gtk_image_new_from_pixbuf(target_image_pix); //gtk_image_new_from_file(lapps_wallpaper);
 	gtk_layout_put(GTK_LAYOUT(layout), image, 0, 0);
+	g_object_unref(image_pix);
+	g_object_unref(target_image_pix);
+	gtk_window_set_opacity(GTK_WINDOW(window), 0.85);
 
-	// box
+	// icons boxes and table
 	//GtkWidget *box = gtk_hbox_new(TRUE, 1);
 	GtkWidget *box;// = gtk_hbox_new(TRUE, 1);
+	// GtkWidget *frame; // gtk_frame_new (const gchar *label);
 	GtkWidget *table;
 	table = gtk_table_new(grid[0], grid[1], TRUE);
-	gtk_table_set_row_spacings(GTK_TABLE(table), 2);
+	gtk_table_set_row_spacings(GTK_TABLE(table), 20);
 	gtk_table_set_col_spacings(GTK_TABLE(table), 2);
-
+	// GdkColor color;
+	//gdk_color_parse( "#FFFFFF", &color );
+	///gtk_widget_modify_bg (box, GTK_STATE_NORMAL, &color);
 	// list
 	// GtkWidget *list = gtk_list_new();
 
@@ -195,6 +221,7 @@ static void lapps_create_main_window() {
 	//GtkListStore *store;
 	//GtkTreeIter iter;
 	GdkPixbuf *pixbuf;
+	GdkPixbuf *target_pixbuf;
 	GtkWidget *app_label;// = gtk_label_new (const gchar *str);
 
 	//icon_view = gtk_icon_view_new ();
@@ -207,6 +234,7 @@ static void lapps_create_main_window() {
 	GList *app_list = g_app_info_get_all();
 	GList *l;
 	// GtkWidget *item;
+	GList *box_list;
 
 	 int i = 0;
 	 int j = 0;
@@ -214,15 +242,30 @@ static void lapps_create_main_window() {
 	for (l = app_list; l != NULL; l = l->next) {
 		if (g_app_info_get_icon(l->data) != NULL) {
 			//gtk_list_store_append (store, &iter);
-			  pixbuf = gdk_pixbuf_new_from_file (lapps_icon_filename(l->data), NULL);
+			  pixbuf = gdk_pixbuf_copy(lapps_application_icon(l->data));   //gdk_pixbuf_new_from_file (g_strdup(lapps_icon_filename(l->data)), NULL);
+			  target_pixbuf = gdk_pixbuf_scale_simple(pixbuf, icon_size, icon_size, GDK_INTERP_BILINEAR);
 			//  gtk_list_store_set (store, &iter, PIXBUF_COLUMN, pixbuf, TEXT_COLUMN, g_strdup(g_app_info_get_display_name(l->data)), -1);
 			  box = gtk_vbox_new(TRUE, 1);
-			  gtk_box_pack_start(GTK_BOX(box), gtk_image_new_from_pixbuf(pixbuf), 0, 0, 0);
-			  app_label = gtk_label_new (g_strdup(g_app_info_get_display_name(l->data)));
-			  gtk_box_pack_start(GTK_BOX(box), app_label, 0, 0, 0);
-			  gtk_table_attach_defaults(GTK_TABLE(table), box, j, j+1, i, i+1);
+			 // frame = gtk_frame_new (NULL);
+			//  gtk_container_add(GTK_CONTAINER(box), frame);
+			gtk_box_pack_start(GTK_BOX(box), gtk_image_new_from_pixbuf(target_pixbuf), 0, 0, 0);
+			app_label = gtk_label_new(NULL);
+			gtk_label_set_markup(GTK_LABEL(app_label),
+			g_strconcat("<span color=\"white\"><b>", g_strdup(g_app_info_get_display_name(l->data)),
+							"</b></span>", NULL));
+			gtk_box_pack_start(GTK_BOX(box), app_label, 0, 0, 0);
+			gtk_table_attach_defaults(GTK_TABLE(table), box, j, j + 1, i, i + 1);
 			  g_object_unref (pixbuf);
-			  break;
+			  if(j < grid[1]){
+			  j++;
+			  }else{
+			  j=0;
+				  i++;
+			  }
+			  if(i==grid[0])
+				  break;
+
+			  //break;
 			/*item = gtk_list_item_new_with_label(
 					g_strconcat(g_app_info_get_id(l->data), " - ", g_app_info_get_name(l->data), " - ",
 							g_app_info_get_display_name(l->data), " - ", g_icon_to_string(g_app_info_get_icon(l->data)),
