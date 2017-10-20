@@ -55,6 +55,8 @@ gchar *wallpaper_conf_url;
 gchar *lapps_wallpaper;
 gboolean running = FALSE;
 gint icon_size;
+// grid[0] = rows | grid[1] = columns
+gint grid[2];
 
 typedef struct {
 	LXPanel *panel;
@@ -101,6 +103,7 @@ static void lapps_set_icons_size() {
 	gint s_height = gdk_screen_get_height(screen);
 	gint s_width = gdk_screen_get_width(screen);
 	double suggested_size = (pow(s_width * s_height, ((double) (1.0 / 3.0))) / 1.6);
+
 	if (suggested_size < 27) {
 		icon_size = 24;
 	} else if (suggested_size >= 27 && suggested_size < 40) {
@@ -109,6 +112,14 @@ static void lapps_set_icons_size() {
 		icon_size = 48;
 	} else if (suggested_size >= 56) {
 		icon_size = 64;
+	}
+
+	if (s_width > s_height) { // normal landscape orientation
+		grid[0] = 4;
+		grid[1] = 6;
+	} else { // most likely a portrait orientation
+		grid[0] = 6;
+		grid[1] = 4;
 	}
 }
 
@@ -149,6 +160,7 @@ static void lapps_create_main_window() {
 	gtk_window_set_title(GTK_WINDOW(window), "Launch Apps");
 	gtk_widget_set_app_paintable(window, TRUE);
 	gtk_window_set_decorated(GTK_WINDOW(window), FALSE);
+	gtk_container_set_border_width(GTK_CONTAINER(window), 10);
 	gtk_window_set_icon_from_file(GTK_WINDOW(window), g_strconcat("/usr/share/lxpanel/images/", lapps_icon, NULL), NULL);
 	gtk_widget_add_events(window, GDK_BUTTON_PRESS_MASK);
 	gtk_widget_add_events(window, GDK_UNMAP);
@@ -164,38 +176,53 @@ static void lapps_create_main_window() {
 
 	// box
 	//GtkWidget *box = gtk_hbox_new(TRUE, 1);
-	GtkWidget *box = gtk_vbox_new(TRUE, 1);
+	GtkWidget *box;// = gtk_hbox_new(TRUE, 1);
+	GtkWidget *table;
+	table = gtk_table_new(grid[0], grid[1], TRUE);
+	gtk_table_set_row_spacings(GTK_TABLE(table), 2);
+	gtk_table_set_col_spacings(GTK_TABLE(table), 2);
 
 	// list
 	// GtkWidget *list = gtk_list_new();
 
-	enum {
+	/*enum {
 	  PIXBUF_COLUMN,
 	  TEXT_COLUMN,
 	  DATA_COLUMN
 	};
 
-	GtkWidget *icon_view;
-	GtkListStore *store;
-	GtkTreeIter iter;
+	GtkWidget *icon_view;*/
+	//GtkListStore *store;
+	//GtkTreeIter iter;
 	GdkPixbuf *pixbuf;
+	GtkWidget *app_label;// = gtk_label_new (const gchar *str);
 
-	icon_view = gtk_icon_view_new ();
-	store = gtk_list_store_new (3, GDK_TYPE_PIXBUF, G_TYPE_STRING, G_TYPE_POINTER);
+	//icon_view = gtk_icon_view_new ();
+	//store = gtk_list_store_new (3, GDK_TYPE_PIXBUF, G_TYPE_STRING, G_TYPE_POINTER);
 
-	gtk_icon_view_set_pixbuf_column (GTK_ICON_VIEW (icon_view), PIXBUF_COLUMN);
-	gtk_icon_view_set_text_column (GTK_ICON_VIEW (icon_view), TEXT_COLUMN);
-	gtk_icon_view_set_model (GTK_ICON_VIEW (icon_view), GTK_TREE_MODEL (store));
+	//gtk_icon_view_set_pixbuf_column (GTK_ICON_VIEW (icon_view), PIXBUF_COLUMN);
+	//gtk_icon_view_set_text_column (GTK_ICON_VIEW (icon_view), TEXT_COLUMN);
+	//gtk_icon_view_set_model (GTK_ICON_VIEW (icon_view), GTK_TREE_MODEL (store));
 
 	GList *app_list = g_app_info_get_all();
 	GList *l;
 	// GtkWidget *item;
+
+	 int i = 0;
+	 int j = 0;
+
 	for (l = app_list; l != NULL; l = l->next) {
 		if (g_app_info_get_icon(l->data) != NULL) {
-			gtk_list_store_append (store, &iter);
+			//gtk_list_store_append (store, &iter);
 			  pixbuf = gdk_pixbuf_new_from_file (lapps_icon_filename(l->data), NULL);
-			  gtk_list_store_set (store, &iter, PIXBUF_COLUMN, pixbuf, TEXT_COLUMN, g_strdup(g_app_info_get_display_name(l->data)), -1);
+			//  gtk_list_store_set (store, &iter, PIXBUF_COLUMN, pixbuf, TEXT_COLUMN, g_strdup(g_app_info_get_display_name(l->data)), -1);
+			  box = gtk_vbox_new(TRUE, 1);
+			  gtk_box_pack_start(GTK_BOX(box), gtk_image_new_from_pixbuf(pixbuf), 0, 0, 0);
+			  app_label = gtk_label_new (g_strdup(g_app_info_get_display_name(l->data)));
+			  gtk_box_pack_start(GTK_BOX(box), app_label, 0, 0, 0);
+			  gtk_table_attach_defaults(GTK_TABLE(table), box, j, j+1, i, i+1);
 			  g_object_unref (pixbuf);
+			  break;
 			/*item = gtk_list_item_new_with_label(
 					g_strconcat(g_app_info_get_id(l->data), " - ", g_app_info_get_name(l->data), " - ",
 							g_app_info_get_display_name(l->data), " - ", g_icon_to_string(g_app_info_get_icon(l->data)),
@@ -209,8 +236,8 @@ static void lapps_create_main_window() {
 
 	// add box to layout
 	//gtk_container_add(GTK_CONTAINER(layout), box);
-	gtk_container_add(GTK_CONTAINER(box), icon_view);
-	gtk_container_add(GTK_CONTAINER(layout), box);
+	// gtk_container_add(GTK_CONTAINER(box), icon_view);
+	gtk_container_add(GTK_CONTAINER(layout), table);
 	gtk_widget_show_all(window);
 	gtk_main();
 }

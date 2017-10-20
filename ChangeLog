@@ -1,6 +1,18 @@
 
+2017-10-19  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* Testado icon lookups com sucesso
+	* Lista de aplicações funcionando sem crash, iniciando desenvolvimento do grid de ícones
+	* Tentando resolver problema de segment fault ao abrir duas instancias da mesma aplicação
+
+2017-10-18  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* Testando background ...
+	* Testando backgound image
+
 2017-10-17  Alexandre C Vieira <acamargo.vieira@gmail.com>
 
+	* Função para fechar a janela quando a aplicação clicada iniciar a execução
 	* testada execução da aplicação da lista com sucesso
 	* Testando lista de aplicações
 
