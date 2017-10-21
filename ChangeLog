@@ -1,4 +1,9 @@
 
+2017-10-21  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* Resolvido problema de travamento do painel e ajuste do espaçamento das linhas da tabela de ícones
+	* Grid populado com sucesso e aplicações executadas com sucesso ao clicar no respectivo ícone
+
 2017-10-20  Alexandre C Vieira <acamargo.vieira@gmail.com>
 
 	* Icons lookups funcionando Icons grid ok
