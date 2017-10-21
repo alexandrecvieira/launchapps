@@ -132,7 +132,6 @@ static void lapps_item_clicked_window_close(GtkWidget *widget, GdkEventButton *e
 static void lapps_exec(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
 	GAppInfo *app = g_app_info_dup((GAppInfo *) user_data);
 	g_app_info_launch(app, NULL, NULL, NULL);
-	g_free(app);
 }
 
 static GdkPixbuf *lapps_application_icon(GAppInfo *appinfo) {
@@ -170,6 +169,7 @@ static void lapps_create_main_window() {
 	// background
 	image_pix = gdk_pixbuf_new_from_file(lapps_wallpaper, NULL);
 	layout = gtk_layout_new(NULL, NULL);
+	gtk_layout_set_size (GTK_LAYOUT(layout), s_width, s_height);
 	gtk_container_add(GTK_CONTAINER(window), layout);
 	target_image_pix = gdk_pixbuf_scale_simple(image_pix, s_width, s_height, GDK_INTERP_BILINEAR);
 	image = gtk_image_new_from_pixbuf(target_image_pix);
@@ -179,8 +179,8 @@ static void lapps_create_main_window() {
 
 	// icons boxes and table
 	table = gtk_table_new(grid[0], grid[1], TRUE);
-	gtk_table_set_row_spacings(GTK_TABLE(table), 2);
-	gtk_table_set_col_spacings(GTK_TABLE(table), 20);
+	gtk_table_set_row_spacings(GTK_TABLE(table), 50);
+	gtk_table_set_col_spacings(GTK_TABLE(table), 0);
 	app_list = g_app_info_get_all();
 
 	int i = 0;
@@ -188,7 +188,7 @@ static void lapps_create_main_window() {
 
 	for (test_list = app_list; test_list != NULL; test_list = test_list->next) {
 		if (g_app_info_get_icon(test_list->data) != NULL) {
-			icon_pix = gdk_pixbuf_copy(lapps_application_icon(test_list->data));
+			icon_pix = lapps_application_icon(test_list->data);
 			target_icon_pix = gdk_pixbuf_scale_simple(icon_pix, icon_size, icon_size, GDK_INTERP_BILINEAR);
 			box = gtk_vbox_new(TRUE, 1);
 			event_box = gtk_event_box_new();
@@ -197,7 +197,7 @@ static void lapps_create_main_window() {
 			g_signal_connect(G_OBJECT(event_box), "button-press-event", G_CALLBACK(lapps_exec), (gpointer )test_list->data);
 			g_signal_connect(G_OBJECT(event_box), "button-release-event", G_CALLBACK(lapps_item_clicked_window_close),
 					NULL);
-			gtk_box_pack_start(GTK_BOX(box), gtk_image_new_from_pixbuf(gdk_pixbuf_copy(target_icon_pix)), 0, 0, 0);
+			gtk_box_pack_start(GTK_BOX(box), gtk_image_new_from_pixbuf(target_icon_pix), 0, 0, 0);
 			app_label = gtk_label_new(NULL);
 			gtk_label_set_markup(GTK_LABEL(app_label),
 					g_strconcat("<span color=\"white\"><b>", g_strdup(g_app_info_get_name(test_list->data)), "</b></span>",
