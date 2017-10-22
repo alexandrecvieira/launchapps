@@ -33,11 +33,6 @@
 #include <glib.h>
 #include <glib-object.h>
 
-#include <X11/X.h>
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
-#include <X11/Xatom.h>
-
 #include "lxpanel.private/dbg.h"
 #include "lxpanel.private/ev.h"
 #include <lxpanel/icon-grid.h>
@@ -145,9 +140,8 @@ static GdkPixbuf *lapps_application_icon(GAppInfo *appinfo) {
 }
 
 static void lapps_create_main_window() {
-	GtkWidget *layout, *image, *box, *event_box, *app_label;
+	GtkWidget *layout, *image, *box, *event_box, *app_label, *table;
 	GdkPixbuf *image_pix, *target_image_pix, *icon_pix, *target_icon_pix;
-	GtkWidget *table;
 	GList *app_list, *test_list;
 
 	// main window
@@ -203,7 +197,7 @@ static void lapps_create_main_window() {
 					g_strconcat("<span color=\"white\"><b>", g_strdup(g_app_info_get_name(test_list->data)), "</b></span>",
 					NULL));
 			gtk_box_pack_start(GTK_BOX(box), app_label, 0, 0, 0);
-			gtk_table_attach_defaults(GTK_TABLE(table), event_box, j, j + 1, i, i + 1);
+			gtk_table_attach(GTK_TABLE(table), event_box, j, j + 1, i, i + 1, GTK_SHRINK, GTK_FILL, 20, 0);
 			g_object_unref(icon_pix);
 			g_object_unref(target_icon_pix);
 			if (j < grid[1]) {
