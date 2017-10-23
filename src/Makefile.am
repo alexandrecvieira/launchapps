@@ -15,11 +15,11 @@ launchapps_la_SOURCES = launchapps.c
 DEFS = -DLOCALEDIR=\"$(localedir)\" @DEFS@
 
 # Linker options libTestProgram
-launchapps_la_LDFLAGS = -module -avoid-version -shared $(LTLIBINTL)
+launchapps_la_LDFLAGS = -module -avoid-version -shared $(LTLIBINTL) $(MAGICKWAND_LIBS)
 
 # Compiler options. Here we are adding the include directory
 # to be searched for headers included in the source code.
-launchapps_la_CPPFLAGS = -I$(top_srcdir)/include $(GTK2_CFLAGS)
+launchapps_la_CPPFLAGS = -I$(top_srcdir)/include $(GTK2_CFLAGS) $(MAGICKWAND_CFLAGS)
 
 install-exec-hook:
 		cd $(DESTDIR)$(libdir) && $(RM) $(lib_LTLIBRARIES) \

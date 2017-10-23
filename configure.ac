@@ -45,6 +45,7 @@ PKG_CHECK_MODULES(GTK2, [gtk+-2.0])
 PKG_CHECK_MODULES(GLIB2, [glib-2.0])
 PKG_CHECK_MODULES(LIBFM, [libfm])
 PKG_CHECK_MODULES(GIO2, [gio-2.0])
+PKG_CHECK_MODULES(MAGICKWAND, [MagickWand])
 AC_CHECK_FUNCS([strstr])
 
 ac_version_subst_str=`echo $VERSION | awk -F '.' '/.*/ { printf "VERSION_MAJOR=%d VERSION_MINOR=%d VERSION_MICRO=%d", $1, $2, $3 }'`

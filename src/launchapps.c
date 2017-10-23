@@ -39,12 +39,15 @@
 #include <lxpanel/misc.h>
 #include <lxpanel/plugin.h>
 
+#include <wand/MagickWand.h>
+
 typedef enum {
 	LA_NONE, LA_ICONIFY
 } WindowCommand;
 
 GtkWidget *window;
-gchar *lapps_icon = "launchapps.png", *wallpaper_conf_url, *lapps_wallpaper;
+GdkPixbuf *bg_pix_cache;
+gchar *lapps_icon = "launchapps.png", *wallpaper_conf_url, *lapps_wallpaper, *lapps_wallpaper_cache = "";
 gboolean running = FALSE;
 // grid[0] = rows | grid[1] = columns
 gint icon_size, s_height, s_width, grid[2];
@@ -139,6 +142,44 @@ static GdkPixbuf *lapps_application_icon(GAppInfo *appinfo) {
 	return icon;
 }
 
+static void lapps_blur_background(gchar *image, GdkPixbuf *bg_pix) {
+	MagickWand *inWand, *outWand;
+	size_t width;
+	size_t height;
+	gint rowstride;
+	gint row;
+	guchar *pixels;
+
+	MagickWandGenesis();
+	inWand = NewMagickWand();
+	MagickReadImage(inWand, image);
+	outWand = CloneMagickWand(inWand);
+	MagickBlurImage(outWand, 0, 15);
+	width = MagickGetImageWidth(inWand);
+	height = MagickGetImageHeight(inWand);
+	pixels = gdk_pixbuf_get_pixels(bg_pix);
+	rowstride = gdk_pixbuf_get_rowstride(bg_pix);
+	MagickSetImageDepth(outWand, 32);
+
+	for (row = 0; row < height; row++) {
+		guchar *data = pixels + row * rowstride;
+		MagickExportImagePixels(outWand, 0, row, width, 1, "RGB", CharPixel, data);
+	}
+
+	inWand = DestroyMagickWand(inWand);
+	outWand = DestroyMagickWand(outWand);
+
+	MagickWandTerminus();
+}
+
+static gboolean lapps_wallpaper_changed() {
+	if (g_strcmp0(lapps_wallpaper, lapps_wallpaper_cache) != 0) {
+		lapps_wallpaper_cache = g_strdup(lapps_wallpaper);
+		return TRUE;
+	}
+	return FALSE;
+}
+
 static void lapps_create_main_window() {
 	GtkWidget *layout, *image, *box, *event_box, *app_label, *table;
 	GdkPixbuf *image_pix, *target_image_pix, *icon_pix, *target_icon_pix;
@@ -152,7 +193,6 @@ static void lapps_create_main_window() {
 	gtk_window_set_keep_above(GTK_WINDOW(window), TRUE);
 	gtk_window_set_title(GTK_WINDOW(window), "Launch Apps");
 	gtk_widget_set_app_paintable(window, TRUE);
-	gtk_window_set_opacity(GTK_WINDOW(window), 0.9);
 	gtk_window_set_decorated(GTK_WINDOW(window), FALSE);
 	gtk_window_set_icon_from_file(GTK_WINDOW(window), g_strconcat("/usr/share/lxpanel/images/", lapps_icon, NULL),
 			NULL);
@@ -161,12 +201,17 @@ static void lapps_create_main_window() {
 	g_signal_connect(G_OBJECT(window), "delete-event", gtk_main_quit, NULL);
 
 	// background
-	image_pix = gdk_pixbuf_new_from_file(lapps_wallpaper, NULL);
+	if(lapps_wallpaper_changed()){
+		image_pix = gdk_pixbuf_new_from_file(lapps_wallpaper, NULL);
+		lapps_blur_background(lapps_wallpaper, image_pix);
+		g_object_unref(bg_pix_cache);
+		bg_pix_cache = gdk_pixbuf_copy(image_pix);
+	}else
+		image_pix = gdk_pixbuf_copy(bg_pix_cache);
 	layout = gtk_layout_new(NULL, NULL);
 	gtk_layout_set_size (GTK_LAYOUT(layout), s_width, s_height);
 	gtk_container_add(GTK_CONTAINER(window), layout);
 	target_image_pix = gdk_pixbuf_scale_simple(image_pix, s_width, s_height, GDK_INTERP_BILINEAR);
-	gdk_pixbuf_saturate_and_pixelate (target_image_pix, target_image_pix, 0, FALSE);
 	image = gtk_image_new_from_pixbuf(target_image_pix);
 	gtk_layout_put(GTK_LAYOUT(layout), image, 0, 0);
 	g_object_unref(image_pix);
