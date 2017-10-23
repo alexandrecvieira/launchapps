@@ -166,6 +166,7 @@ static void lapps_create_main_window() {
 	gtk_layout_set_size (GTK_LAYOUT(layout), s_width, s_height);
 	gtk_container_add(GTK_CONTAINER(window), layout);
 	target_image_pix = gdk_pixbuf_scale_simple(image_pix, s_width, s_height, GDK_INTERP_BILINEAR);
+	gdk_pixbuf_saturate_and_pixelate (target_image_pix, target_image_pix, 0, FALSE);
 	image = gtk_image_new_from_pixbuf(target_image_pix);
 	gtk_layout_put(GTK_LAYOUT(layout), image, 0, 0);
 	g_object_unref(image_pix);
@@ -196,6 +197,7 @@ static void lapps_create_main_window() {
 			gtk_label_set_markup(GTK_LABEL(app_label),
 					g_strconcat("<span color=\"white\"><b>", g_strdup(g_app_info_get_name(test_list->data)), "</b></span>",
 					NULL));
+			gtk_label_set_line_wrap(GTK_LABEL(app_label), TRUE);
 			gtk_box_pack_start(GTK_BOX(box), app_label, 0, 0, 0);
 			gtk_table_attach(GTK_TABLE(table), event_box, j, j + 1, i, i + 1, GTK_SHRINK, GTK_FILL, 20, 0);
 			g_object_unref(icon_pix);
