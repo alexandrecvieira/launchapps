@@ -1,5 +1,6 @@
 launchapps_images_DATA = \
-	launchapps.png
+	launchapps.png \
+	launchapp-bg-default.jpg
 	
 launchapps_imagesdir = $(datadir)/lxpanel/images
 

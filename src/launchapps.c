@@ -46,8 +46,10 @@ typedef enum {
 } WindowCommand;
 
 GtkWidget *window;
-GdkPixbuf *bg_pix_cache;
-gchar *lapps_icon = "launchapps.png", *wallpaper_conf_url, *lapps_wallpaper, *lapps_wallpaper_cache = "";
+gchar *lapps_icon = "launchapps.png";
+gchar *wallpaper_conf_url, *lapps_wallpaper;
+gchar *lapps_wallpaper_cache = "";
+gchar *bg_pix_tmp = "/tmp/wlaunchapps";
 gboolean running = FALSE;
 // grid[0] = rows | grid[1] = columns
 gint icon_size, s_height, s_width, grid[2];
@@ -75,7 +77,7 @@ static void lapps_get_wallpaper() {
 }
 
 static void lapps_get_wallpaper_conf_path() {
-	gchar *homedir, *conf_url;
+	gchar *homedir;
 
 	if ((homedir = g_strdup(getenv("HOME"))) == NULL) {
 		homedir = g_strdup(getpwuid(getuid())->pw_dir);
@@ -142,17 +144,21 @@ static GdkPixbuf *lapps_application_icon(GAppInfo *appinfo) {
 	return icon;
 }
 
-static void lapps_blur_background(gchar *image, GdkPixbuf *bg_pix) {
+static gboolean lapps_blur_background(gchar *image, GdkPixbuf *bg_pix) {
 	MagickWand *inWand, *outWand;
-	size_t width;
-	size_t height;
-	gint rowstride;
-	gint row;
+	size_t width, height;
+	gint rowstride, row;
 	guchar *pixels;
+	MagickBooleanType status;
 
 	MagickWandGenesis();
 	inWand = NewMagickWand();
-	MagickReadImage(inWand, image);
+	status = MagickReadImage(inWand, image);
+	if (status == MagickFalse) {
+		inWand = DestroyMagickWand(inWand);
+		MagickWandTerminus();
+		return FALSE;
+	}
 	outWand = CloneMagickWand(inWand);
 	MagickBlurImage(outWand, 0, 15);
 	width = MagickGetImageWidth(inWand);
@@ -166,10 +172,13 @@ static void lapps_blur_background(gchar *image, GdkPixbuf *bg_pix) {
 		MagickExportImagePixels(outWand, 0, row, width, 1, "RGB", CharPixel, data);
 	}
 
+	MagickWriteImage(outWand, bg_pix_tmp);
+
 	inWand = DestroyMagickWand(inWand);
 	outWand = DestroyMagickWand(outWand);
 
 	MagickWandTerminus();
+	return TRUE;
 }
 
 static gboolean lapps_wallpaper_changed() {
@@ -181,7 +190,7 @@ static gboolean lapps_wallpaper_changed() {
 }
 
 static void lapps_create_main_window() {
-	GtkWidget *layout, *image, *box, *event_box, *app_label, *table;
+	GtkWidget *layout, *bg_image, *app_box, *event_box, *app_label, *table;
 	GdkPixbuf *image_pix, *target_image_pix, *icon_pix, *target_icon_pix;
 	GList *app_list, *test_list;
 
@@ -201,19 +210,18 @@ static void lapps_create_main_window() {
 	g_signal_connect(G_OBJECT(window), "delete-event", gtk_main_quit, NULL);
 
 	// background
-	if(lapps_wallpaper_changed()){
+	if (lapps_wallpaper_changed()) {
 		image_pix = gdk_pixbuf_new_from_file(lapps_wallpaper, NULL);
-		lapps_blur_background(lapps_wallpaper, image_pix);
-		g_object_unref(bg_pix_cache);
-		bg_pix_cache = gdk_pixbuf_copy(image_pix);
-	}else
-		image_pix = gdk_pixbuf_copy(bg_pix_cache);
+		if (!lapps_blur_background(lapps_wallpaper, image_pix))
+			image_pix = gdk_pixbuf_new_from_file("/usr/share/lxpanel/images/launchapp-bg-default.jpg", NULL);
+	} else
+		image_pix = gdk_pixbuf_new_from_file(bg_pix_tmp, NULL);
 	layout = gtk_layout_new(NULL, NULL);
 	gtk_layout_set_size (GTK_LAYOUT(layout), s_width, s_height);
 	gtk_container_add(GTK_CONTAINER(window), layout);
 	target_image_pix = gdk_pixbuf_scale_simple(image_pix, s_width, s_height, GDK_INTERP_BILINEAR);
-	image = gtk_image_new_from_pixbuf(target_image_pix);
-	gtk_layout_put(GTK_LAYOUT(layout), image, 0, 0);
+	bg_image = gtk_image_new_from_pixbuf(target_image_pix);
+	gtk_layout_put(GTK_LAYOUT(layout), bg_image, 0, 0);
 	g_object_unref(image_pix);
 	g_object_unref(target_image_pix);
 
@@ -230,20 +238,20 @@ static void lapps_create_main_window() {
 		if (g_app_info_get_icon(test_list->data) != NULL) {
 			icon_pix = lapps_application_icon(test_list->data);
 			target_icon_pix = gdk_pixbuf_scale_simple(icon_pix, icon_size, icon_size, GDK_INTERP_BILINEAR);
-			box = gtk_vbox_new(TRUE, 1);
+			app_box = gtk_vbox_new(TRUE, 1);
 			event_box = gtk_event_box_new();
 			gtk_event_box_set_visible_window(GTK_EVENT_BOX(event_box), FALSE);
-			gtk_container_add(GTK_CONTAINER(event_box), box);
+			gtk_container_add(GTK_CONTAINER(event_box), app_box);
 			g_signal_connect(G_OBJECT(event_box), "button-press-event", G_CALLBACK(lapps_exec), (gpointer )test_list->data);
 			g_signal_connect(G_OBJECT(event_box), "button-release-event", G_CALLBACK(lapps_item_clicked_window_close),
 					NULL);
-			gtk_box_pack_start(GTK_BOX(box), gtk_image_new_from_pixbuf(target_icon_pix), 0, 0, 0);
+			gtk_box_pack_start(GTK_BOX(app_box), gtk_image_new_from_pixbuf(target_icon_pix), 0, 0, 0);
 			app_label = gtk_label_new(NULL);
 			gtk_label_set_markup(GTK_LABEL(app_label),
 					g_strconcat("<span color=\"white\"><b>", g_strdup(g_app_info_get_name(test_list->data)), "</b></span>",
 					NULL));
 			gtk_label_set_line_wrap(GTK_LABEL(app_label), TRUE);
-			gtk_box_pack_start(GTK_BOX(box), app_label, 0, 0, 0);
+			gtk_box_pack_start(GTK_BOX(app_box), app_label, 0, 0, 0);
 			gtk_table_attach(GTK_TABLE(table), event_box, j, j + 1, i, i + 1, GTK_SHRINK, GTK_FILL, 20, 0);
 			g_object_unref(icon_pix);
 			g_object_unref(target_icon_pix);
