@@ -49,7 +49,7 @@ GtkWidget *window;
 gchar *lapps_icon = "launchapps.png";
 gchar *wallpaper_conf_url, *lapps_wallpaper;
 gchar *lapps_wallpaper_cache = "";
-gchar *bg_pix_tmp = "/tmp/wlaunchapps";
+gchar *bg_pix_tmp = "/tmp/bglaunchapps";
 gboolean running = FALSE;
 // grid[0] = rows | grid[1] = columns
 gint icon_size, s_height, s_width, grid[2];
@@ -213,7 +213,7 @@ static void lapps_create_main_window() {
 	if (lapps_wallpaper_changed()) {
 		image_pix = gdk_pixbuf_new_from_file(lapps_wallpaper, NULL);
 		if (!lapps_blur_background(lapps_wallpaper, image_pix))
-			image_pix = gdk_pixbuf_new_from_file("/usr/share/lxpanel/images/launchapp-bg-default.jpg", NULL);
+			image_pix = gdk_pixbuf_new_from_file("/usr/share/lxpanel/images/launchapps-bg-default.jpg", NULL);
 	} else
 		image_pix = gdk_pixbuf_new_from_file(bg_pix_tmp, NULL);
 	layout = gtk_layout_new(NULL, NULL);
