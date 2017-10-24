@@ -189,6 +189,87 @@ static gboolean lapps_wallpaper_changed() {
 	return FALSE;
 }
 
+static GdkPixbuf *lapps_app_name(gchar *app_name) {
+	GdkPixbuf *bg_target_pix;
+	MagickWand *magick_wand = NULL;
+	MagickWand *c_wand = NULL;
+	DrawingWand *d_wand = NULL;
+	PixelWand *p_wand = NULL;
+	size_t width, height;
+	gint rowstride, row;
+	guchar *pixels;
+
+	magick_wand = NewMagickWand();
+	d_wand = NewDrawingWand();
+	p_wand = NewPixelWand();
+	PixelSetColor(p_wand, "none");
+
+	// Create a new transparent image
+	MagickNewImage(magick_wand, 640, 480, p_wand);
+
+	// Set up a 16 point white font
+	PixelSetColor(p_wand, "white");
+	DrawSetFillColor(d_wand, p_wand);
+	DrawSetFont(d_wand, "Verdana");
+	DrawSetFontSize(d_wand, 13);
+
+	// Turn antialias on - not sure this makes a difference
+	DrawSetTextAntialias(d_wand, MagickTrue);
+
+	// Now draw the text
+	DrawAnnotation(d_wand, 200, 140, app_name);
+
+	// Draw the image on to the magick_wand
+	MagickDrawImage(magick_wand, d_wand);
+
+	// Trim the image down to include only the text
+	MagickTrimImage(magick_wand, 0);
+
+	// equivalent to the command line +repage
+	MagickResetImagePage(magick_wand, "");
+
+	// Make a copy of the text image
+	c_wand = CloneMagickWand(magick_wand);
+
+	// Set the background colour to blue for the shadow
+	PixelSetColor(p_wand, "gray");
+	MagickSetImageBackgroundColor(magick_wand, p_wand);
+
+	// Opacity is a real number indicating (apparently) percentage
+	MagickShadowImage(magick_wand, 79, 1.5, 5, 5);
+
+	// Composite the text on top of the shadow
+	MagickCompositeImage(magick_wand, c_wand, OverCompositeOp, 5, 5);
+
+	width = MagickGetImageWidth(magick_wand);
+	height = MagickGetImageHeight(magick_wand);
+
+	bg_target_pix = gdk_pixbuf_new(GDK_COLORSPACE_RGB, TRUE, 8, width, height);
+
+	pixels = gdk_pixbuf_get_pixels(bg_target_pix);
+	rowstride = gdk_pixbuf_get_rowstride(bg_target_pix);
+	MagickSetImageDepth(magick_wand, 32);
+
+	for (row = 0; row < height; row++) {
+		guchar *data = pixels + row * rowstride;
+		MagickExportImagePixels(magick_wand, 0, row, width, 1, "RGBA", CharPixel, data);
+	}
+
+	/* Clean up */
+	if (magick_wand)
+		magick_wand = DestroyMagickWand(magick_wand);
+	if (c_wand)
+		c_wand = DestroyMagickWand(c_wand);
+	if (d_wand)
+		d_wand = DestroyDrawingWand(d_wand);
+	if (p_wand)
+		p_wand = DestroyPixelWand(p_wand);
+
+	MagickWandTerminus();
+
+	return bg_target_pix;
+}
+
 static void lapps_create_main_window() {
 	GtkWidget *layout, *bg_image, *app_box, *event_box, *app_label, *table;
 	GdkPixbuf *image_pix, *target_image_pix, *icon_pix, *target_icon_pix;
@@ -246,16 +327,16 @@ static void lapps_create_main_window() {
 			g_signal_connect(G_OBJECT(event_box), "button-release-event", G_CALLBACK(lapps_item_clicked_window_close),
 					NULL);
 			gtk_box_pack_start(GTK_BOX(app_box), gtk_image_new_from_pixbuf(target_icon_pix), 0, 0, 0);
-			app_label = gtk_label_new(NULL);
-			gtk_label_set_markup(GTK_LABEL(app_label),
-					g_strconcat("<span color=\"white\"><b>", g_strdup(g_app_info_get_name(test_list->data)), "</b></span>",
-					NULL));
+			app_label = gtk_image_new_from_pixbuf(lapps_app_name(g_strdup(g_app_info_get_name(test_list->data))));//gtk_label_new(NULL);
+			//gtk_label_set_markup(GTK_LABEL(app_label),
+			//		g_strconcat("<span color=\"white\"><b>", g_strdup(g_app_info_get_name(test_list->data)), "</b></span>",
+			//		NULL));
 			gtk_label_set_line_wrap(GTK_LABEL(app_label), TRUE);
 			gtk_box_pack_start(GTK_BOX(app_box), app_label, 0, 0, 0);
-			gtk_table_attach(GTK_TABLE(table), event_box, j, j + 1, i, i + 1, GTK_SHRINK, GTK_FILL, 20, 0);
+			gtk_table_attach(GTK_TABLE(table), event_box, j, j + 1, i, i + 1, GTK_SHRINK, GTK_FILL, 0, 0);
 			g_object_unref(icon_pix);
 			g_object_unref(target_icon_pix);
-			if (j < grid[1]) {
+			if (j < grid[1] - 1) {
 				j++;
 			} else {
 				j = 0;
