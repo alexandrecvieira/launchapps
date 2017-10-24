@@ -1,4 +1,16 @@
 
+2017-10-24  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* Redimencionamento da imagem de background ao carregá-la
+
+2017-10-23  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* Add: applications names shadow
+	* Add: launchapp-bg-default.jpg
+	* Add: bg_default, catch MagickWand read image error Removed: bg_pix memory cache
+	* Incluída MagickWand para criar efeito blur no background
+	* Background saturado e pixelado: teste
+
 2017-10-22  Alexandre C Vieira <acamargo.vieira@gmail.com>
 
 	* Ajuste tamanho dos itens da tabela de ícones
