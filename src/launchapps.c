@@ -49,7 +49,7 @@ GtkWidget *window;
 gchar *lapps_icon = "launchapps.png";
 gchar *wallpaper_conf_url, *lapps_wallpaper;
 gchar *lapps_wallpaper_cache = "";
-gchar *bg_pix_tmp = "/tmp/bglaunchapps";
+gchar *bg_file_tmp = "/tmp/bglaunchapps";
 gboolean running = FALSE;
 // grid[0] = rows | grid[1] = columns
 gint icon_size, s_height, s_width, grid[2];
@@ -172,7 +172,7 @@ static gboolean lapps_blur_background(gchar *image, GdkPixbuf *bg_pix) {
 		MagickExportImagePixels(outWand, 0, row, width, 1, "RGB", CharPixel, data);
 	}
 
-	MagickWriteImage(outWand, bg_pix_tmp);
+	MagickWriteImage(outWand, bg_file_tmp);
 
 	inWand = DestroyMagickWand(inWand);
 	outWand = DestroyMagickWand(outWand);
@@ -231,15 +231,15 @@ static GdkPixbuf *lapps_app_name(gchar *app_name) {
 	// Make a copy of the text image
 	c_wand = CloneMagickWand(magick_wand);
 
-	// Set the background colour to blue for the shadow
-	PixelSetColor(p_wand, "gray");
+	// Set the background colour to gray for the shadow
+	PixelSetColor(p_wand, "black");
 	MagickSetImageBackgroundColor(magick_wand, p_wand);
 
 	// Opacity is a real number indicating (apparently) percentage
-	MagickShadowImage(magick_wand, 79, 1.5, 5, 5);
+	MagickShadowImage(magick_wand, 100, 3, 0, 0);
 
 	// Composite the text on top of the shadow
-	MagickCompositeImage(magick_wand, c_wand, OverCompositeOp, 5, 5);
+	MagickCompositeImage(magick_wand, c_wand, OverCompositeOp, 4, 4);
 
 	width = MagickGetImageWidth(magick_wand);
 	height = MagickGetImageHeight(magick_wand);
@@ -272,7 +272,7 @@ static GdkPixbuf *lapps_app_name(gchar *app_name) {
 
 static void lapps_create_main_window() {
 	GtkWidget *layout, *bg_image, *app_box, *event_box, *app_label, *table;
-	GdkPixbuf *image_pix, *src_image_pix, *target_image_pix, *icon_pix, *target_icon_pix;
+	GdkPixbuf *image_pix, *target_image_pix, *icon_pix, *target_icon_pix;
 	GList *app_list, *test_list;
 
 	// main window
@@ -292,12 +292,11 @@ static void lapps_create_main_window() {
 
 	// background
 	if (lapps_wallpaper_changed()) {
-		src_image_pix = gdk_pixbuf_new_from_file(lapps_wallpaper, NULL);
-		image_pix = gdk_pixbuf_copy(gdk_pixbuf_scale_simple(image_pix, s_width, s_height, GDK_INTERP_BILINEAR));
+		image_pix = gdk_pixbuf_new_from_file(lapps_wallpaper, NULL);
 		if (!lapps_blur_background(lapps_wallpaper, image_pix))
 			image_pix = gdk_pixbuf_new_from_file("/usr/share/lxpanel/images/launchapps-bg-default.jpg", NULL);
 	} else
-		image_pix = gdk_pixbuf_new_from_file(bg_pix_tmp, NULL);
+		image_pix = gdk_pixbuf_new_from_file(bg_file_tmp, NULL);
 	layout = gtk_layout_new(NULL, NULL);
 	gtk_layout_set_size(GTK_LAYOUT(layout), s_width, s_height);
 	gtk_container_add(GTK_CONTAINER(window), layout);
@@ -306,7 +305,6 @@ static void lapps_create_main_window() {
 	gtk_layout_put(GTK_LAYOUT(layout), bg_image, 0, 0);
 	g_object_unref(image_pix);
 	g_object_unref(target_image_pix);
-	g_object_unref(src_image_pix);
 
 	// icons boxes and table
 	table = gtk_table_new(grid[0], grid[1], TRUE);
