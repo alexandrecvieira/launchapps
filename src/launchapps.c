@@ -174,8 +174,10 @@ static gboolean lapps_blur_background(gchar *image, GdkPixbuf *bg_pix) {
 
 	MagickWriteImage(outWand, bg_file_tmp);
 
-	inWand = DestroyMagickWand(inWand);
-	outWand = DestroyMagickWand(outWand);
+	if (inWand)
+		inWand = DestroyMagickWand(inWand);
+	if (outWand)
+		outWand = DestroyMagickWand(outWand);
 
 	MagickWandTerminus();
 	return TRUE;
@@ -191,14 +193,14 @@ static gboolean lapps_wallpaper_changed() {
 
 static GdkPixbuf *lapps_app_name(gchar *app_name) {
 	GdkPixbuf *bg_target_pix;
-	MagickWand *magick_wand = NULL;
-	MagickWand *c_wand = NULL;
-	DrawingWand *d_wand = NULL;
-	PixelWand *p_wand = NULL;
+	MagickWand *magick_wand, *c_wand;
+	DrawingWand *d_wand;
+	PixelWand *p_wand;
 	size_t width, height;
 	gint rowstride, row;
 	guchar *pixels;
 
+	MagickWandGenesis();
 	magick_wand = NewMagickWand();
 	d_wand = NewDrawingWand();
 	p_wand = NewPixelWand();
@@ -270,6 +272,56 @@ static GdkPixbuf *lapps_app_name(gchar *app_name) {
 	return bg_target_pix;
 }
 
+static GdkPixbuf *lapps_shadow_icons(GdkPixbuf *src_pix) {
+	GdkPixbuf *bg_target_pix;
+	size_t width, height;
+	gint rowstride, row;
+	guchar *pixels;
+	gchar *buffer;
+	gsize buffer_size;
+	char type;
+	MagickWand *src_wand, *dest_wand;
+
+	MagickWandGenesis();
+
+	src_wand = NewMagickWand();
+	gdk_pixbuf_save_to_buffer(src_pix, &buffer, &buffer_size, "png", NULL);
+	MagickBooleanType read = MagickReadImageBlob(src_wand, buffer, buffer_size);
+	dest_wand = CloneMagickWand(src_wand);
+	PixelWand *shadow_color = NewPixelWand();
+	PixelSetColor(shadow_color, "black");
+	MagickWand *shadow = CloneMagickWand(dest_wand);
+	MagickSetImageBackgroundColor(dest_wand, shadow_color);
+	MagickShadowImage(dest_wand, 100, 2, 0, 0);
+	MagickCompositeImage(dest_wand, shadow, OverCompositeOp, 3, 3);
+	width = MagickGetImageWidth(dest_wand);
+	height = MagickGetImageHeight(dest_wand);
+	MagickSetImageDepth(dest_wand, 32);
+
+	bg_target_pix = gdk_pixbuf_new(GDK_COLORSPACE_RGB, TRUE, 8, width, height);
+
+	pixels = gdk_pixbuf_get_pixels(bg_target_pix);
+	rowstride = gdk_pixbuf_get_rowstride(bg_target_pix);
+
+	for (row = 0; row < height; row++) {
+		guchar *data = pixels + row * rowstride;
+		MagickExportImagePixels(dest_wand, 0, row, width, 1, "RGBA", CharPixel, data);
+	}
+
+	if (shadow)
+		shadow = DestroyMagickWand(shadow);
+	if (src_wand)
+		src_wand = DestroyMagickWand(src_wand);
+	if(dest_wand)
+		dest_wand = DestroyMagickWand(dest_wand);
+	if (shadow_color)
+		shadow_color = DestroyPixelWand(shadow_color);
+
+	MagickWandTerminus();
+
+	return bg_target_pix;
+}
+
 static void lapps_create_main_window() {
 	GtkWidget *layout, *bg_image, *app_box, *event_box, *app_label, *table;
 	GdkPixbuf *image_pix, *target_image_pix, *icon_pix, *target_icon_pix;
@@ -317,7 +369,7 @@ static void lapps_create_main_window() {
 
 	for (test_list = app_list; test_list != NULL; test_list = test_list->next) {
 		if (g_app_info_get_icon(test_list->data) != NULL) {
-			icon_pix = lapps_application_icon(test_list->data);
+			icon_pix = lapps_shadow_icons(lapps_application_icon(test_list->data));
 			target_icon_pix = gdk_pixbuf_scale_simple(icon_pix, icon_size, icon_size, GDK_INTERP_BILINEAR);
 			app_box = gtk_vbox_new(TRUE, 1);
 			event_box = gtk_event_box_new();
@@ -399,7 +451,7 @@ static GtkWidget *lapps_constructor(LXPanel *panel, config_setting_t *settings) 
 FM_DEFINE_MODULE(lxpanel_gtk, launchapps);
 
 LXPanelPluginInit fm_module_init_lxpanel_gtk = {
-		.name = "LaunchApps(Application Launcher)",
+		.name = "Application Launcher",
 		.description = "Application Launcher for LXPanel",
 		.new_instance = lapps_constructor,
 		.one_per_system = 1
