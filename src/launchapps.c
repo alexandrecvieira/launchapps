@@ -199,6 +199,25 @@ static GdkPixbuf *lapps_app_name(gchar *app_name) {
 	size_t width, height;
 	gint rowstride, row;
 	guchar *pixels;
+	gchar *name, *target_name;
+	gint i = 0;
+	gint spaces = 0;
+
+	if (strlen(app_name) > 25) {
+		while(*app_name){
+			if(*app_name == ' ')
+				spaces++;
+			if (i > 25) {
+				if (spaces > 0)
+					break;
+			}
+			app_name++;
+			i++;
+		}
+		name = g_strndup(app_name - i, i);
+		target_name = g_strconcat(name, "...", NULL);
+	} else
+		target_name = g_strdup(app_name);
 
 	MagickWandGenesis();
 	magick_wand = NewMagickWand();
@@ -213,13 +232,13 @@ static GdkPixbuf *lapps_app_name(gchar *app_name) {
 	PixelSetColor(p_wand, "white");
 	DrawSetFillColor(d_wand, p_wand);
 	DrawSetFont(d_wand, "Verdana");
-	DrawSetFontSize(d_wand, 13);
+	DrawSetFontSize(d_wand, 14);
 
 	// Turn antialias on - not sure this makes a difference
 	DrawSetTextAntialias(d_wand, MagickTrue);
 
 	// Now draw the text
-	DrawAnnotation(d_wand, 200, 140, app_name);
+	DrawAnnotation(d_wand, 200, 140, target_name);
 
 	// Draw the image on to the magick_wand
 	MagickDrawImage(magick_wand, d_wand);
@@ -326,6 +345,7 @@ static void lapps_create_main_window() {
 	GtkWidget *layout, *bg_image, *app_box, *event_box, *app_label, *table;
 	GdkPixbuf *image_pix, *target_image_pix, *icon_pix, *target_icon_pix;
 	GList *app_list, *test_list;
+	gint pages;
 
 	// main window
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -364,8 +384,11 @@ static void lapps_create_main_window() {
 	gtk_table_set_col_spacings(GTK_TABLE(table), 0);
 	app_list = g_app_info_get_all();
 
+	pages =  g_list_length(app_list) / (grid[0] * grid[1]);
 	int i = 0;
 	int j = 0;
+	int label_width = 0;
+	int greatest_width = 0;
 
 	for (test_list = app_list; test_list != NULL; test_list = test_list->next) {
 		if (g_app_info_get_icon(test_list->data) != NULL) {
@@ -379,11 +402,15 @@ static void lapps_create_main_window() {
 					(gpointer )test_list->data);
 			g_signal_connect(G_OBJECT(event_box), "button-release-event", G_CALLBACK(lapps_item_clicked_window_close),
 					NULL);
-			gtk_box_pack_start(GTK_BOX(app_box), gtk_image_new_from_pixbuf(target_icon_pix), 0, 0, 0);
+			gtk_box_pack_start(GTK_BOX(app_box), gtk_image_new_from_pixbuf(target_icon_pix), FALSE, FALSE, 0);
 			app_label = gtk_image_new_from_pixbuf(lapps_app_name(g_strdup(g_app_info_get_name(test_list->data))));
-			gtk_label_set_line_wrap(GTK_LABEL(app_label), TRUE);
-			gtk_box_pack_start(GTK_BOX(app_box), app_label, 0, 0, 0);
-			gtk_table_attach(GTK_TABLE(table), event_box, j, j + 1, i, i + 1, GTK_SHRINK, GTK_FILL, 0, 0);
+			label_width = gdk_pixbuf_get_width(gtk_image_get_pixbuf(GTK_IMAGE(app_label)));
+			if(label_width > greatest_width)
+				greatest_width = label_width;
+			greatest_width = greatest_width / 6;
+			gtk_box_pack_start(GTK_BOX(app_box), app_label, FALSE, FALSE, 0);
+			gtk_table_attach(GTK_TABLE(table), event_box, j, j + 1, i, i + 1, GTK_SHRINK, GTK_FILL, greatest_width, 0);
+			gtk_table_set_col_spacing(GTK_TABLE(table), 0, greatest_width);
 			g_object_unref(icon_pix);
 			g_object_unref(target_icon_pix);
 			if (j < grid[1] - 1) {

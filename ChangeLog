@@ -1,4 +1,8 @@
 
+2017-10-25  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* launchapps.c (lapps_shadow_icons): Função para acrescentar sombra aos ícones
+
 2017-10-24  Alexandre C Vieira <acamargo.vieira@gmail.com>
 
 	* Desfeitas alterações para scale prévio da imagem de background e ajustes nas sombra nos nomes das aplicações
