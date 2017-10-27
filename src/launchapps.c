@@ -116,7 +116,6 @@ static GdkPixbuf *lapps_application_icon(GAppInfo *appinfo) {
 }
 
 static gboolean lapps_blur_background(LaunchAppsPlugin *lapps) {
-	//GdkPixbuf *bg_pix
 	MagickWand *inWand, *outWand;
 	size_t width, height;
 	gint rowstride, row;
@@ -159,8 +158,8 @@ static GdkPixbuf *lapps_app_name(gchar *app_name) {
 	gint spaces = 0;
 
 	if (strlen(app_name) > 25) {
-		while(*app_name){
-			if(*app_name == ' ')
+		while (*app_name) {
+			if (*app_name == ' ')
 				spaces++;
 			if (i > 25) {
 				if (spaces > 0)
@@ -253,7 +252,6 @@ static GdkPixbuf *lapps_shadow_icons(GdkPixbuf *src_pix) {
 	guchar *pixels;
 	gchar *buffer;
 	gsize buffer_size;
-	char type;
 	MagickWand *src_wand, *dest_wand;
 
 	MagickWandGenesis();
@@ -286,7 +284,7 @@ static GdkPixbuf *lapps_shadow_icons(GdkPixbuf *src_pix) {
 		shadow = DestroyMagickWand(shadow);
 	if (src_wand)
 		src_wand = DestroyMagickWand(src_wand);
-	if(dest_wand)
+	if (dest_wand)
 		dest_wand = DestroyMagickWand(dest_wand);
 	if (shadow_color)
 		shadow_color = DestroyPixelWand(shadow_color);
@@ -332,7 +330,7 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 	gtk_table_set_col_spacings(GTK_TABLE(table), 0);
 	app_list = g_app_info_get_all();
 
-	pages =  g_list_length(app_list) / (grid[0] * grid[1]);
+	pages = g_list_length(app_list) / (grid[0] * grid[1]);
 	int i = 0;
 	int j = 0;
 	int label_width = 0;
@@ -353,12 +351,11 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 			gtk_box_pack_start(GTK_BOX(app_box), gtk_image_new_from_pixbuf(target_icon_pix), FALSE, FALSE, 0);
 			app_label = gtk_image_new_from_pixbuf(lapps_app_name(g_strdup(g_app_info_get_name(test_list->data))));
 			label_width = gdk_pixbuf_get_width(gtk_image_get_pixbuf(GTK_IMAGE(app_label)));
-			if(label_width > greatest_width)
+			if (label_width > greatest_width)
 				greatest_width = label_width;
 			greatest_width = greatest_width / 6;
 			gtk_box_pack_start(GTK_BOX(app_box), app_label, FALSE, FALSE, 0);
 			gtk_table_attach(GTK_TABLE(table), event_box, j, j + 1, i, i + 1, GTK_SHRINK, GTK_FILL, greatest_width, 0);
-			gtk_table_set_col_spacing(GTK_TABLE(table), 0, greatest_width);
 			g_object_unref(icon_pix);
 			g_object_unref(target_icon_pix);
 			if (j < grid[1] - 1) {
@@ -404,32 +401,39 @@ static gboolean lapps_apply_configuration(gpointer user_data) {
 		g_mkdir(confdir, 0700);
 	}
 
-	lapps->bg_image = DEFAULTBG;
+	lapps->bg_image = g_strdup(DEFAULTBG);
 
 	if (lapps->image != NULL) {
-		if (g_strcmp0(lapps->image, lapps->image_test) != 0) {
-			lapps->bg_image = g_strconcat(confdir, BG, NULL);
-			blurred = lapps_blur_background(lapps);
-			if (blurred) {
-				lapps->image_test = g_strconcat(lapps->image);
-				config_group_set_string(lapps->settings, "image", lapps->image);
-				config_group_set_string(lapps->settings, "image_test", lapps->image_test);
-			} else
-				lapps->bg_image = DEFAULTBG;
-		}
+		lapps->bg_image = g_strconcat(confdir, BG, NULL);
+		blurred = lapps_blur_background(lapps);
+		if (!blurred)
+			lapps->bg_image = g_strdup(DEFAULTBG);
 	}
+
+	config_group_set_string(lapps->settings, "image", lapps->image);
+	config_group_set_string(lapps->settings, "image_test", lapps->image_test);
+
+	g_free(confdir);
+
+	return FALSE;
+}
+
+static gboolean lapps_configuration(gpointer user_data) {
+	GtkWidget *p = user_data;
+	LaunchAppsPlugin *lapps = lxpanel_plugin_get_data(p);
+
+	if (lapps->image != NULL)
+		lapps->bg_image = g_strconcat(g_strdup(fm_get_home_dir()), "/.config/launchapps/", BG, NULL);
 
 	return FALSE;
 }
 
 /* Callback when the configuration dialog is to be shown. */
-static GtkWidget *lapps_configure(LXPanel *panel, GtkWidget *p)
-{
-    LaunchAppsPlugin *lapps = lxpanel_plugin_get_data(p);
-    return lxpanel_generic_config_dlg("Application Launcher",
-        panel, lapps_apply_configuration, p,
-        "Background image", &lapps->image, CONF_TYPE_FILE_ENTRY,
-        NULL);
+static GtkWidget *lapps_configure(LXPanel *panel, GtkWidget *p) {
+	LaunchAppsPlugin *lapps = lxpanel_plugin_get_data(p);
+	return lxpanel_generic_config_dlg("Application Launcher", panel, lapps_apply_configuration, p, "Background image",
+			&lapps->image, CONF_TYPE_FILE_ENTRY,
+			NULL);
 }
 
 static GtkWidget *lapps_constructor(LXPanel *panel, config_setting_t *settings) {
@@ -438,10 +442,16 @@ static GtkWidget *lapps_constructor(LXPanel *panel, config_setting_t *settings) 
 	int i, color_icons;
 	const char *str;
 
+	/* Load parameters from the configuration file. */
+	if (config_setting_lookup_string(settings, "image", &str))
+		lapps->image = g_strdup(str);
+	if (config_setting_lookup_string(settings, "image_test", &str))
+		lapps->image_test = g_strdup(str);
+
 	lapps->panel = panel;
 	lapps->settings = settings;
 
-	lapps->bg_image = DEFAULTBG;
+	lapps->bg_image = g_strdup(DEFAULTBG);
 
 	g_return_val_if_fail(lapps != NULL, 0);
 
@@ -450,7 +460,7 @@ static GtkWidget *lapps_constructor(LXPanel *panel, config_setting_t *settings) 
 
 	lxpanel_plugin_set_data(p, lapps, lapps_destructor);
 
-	lapps_apply_configuration(p);
+	lapps_configuration(p);
 
 	icon_box = gtk_event_box_new();
 	gtk_container_add(GTK_CONTAINER(p), icon_box);

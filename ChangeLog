@@ -1,6 +1,7 @@
 
 2017-10-27  Alexandre C Vieira <acamargo.vieira@gmail.com>
 
+	* Added: Background Settings dialog
 	* launchapps.c (lapps_set_conf): Função lapps_get_wallpaper_conf_path renomeada e criação de diretório de configuração para armazenar o background temporário
 
 2017-10-26  Alexandre C Vieira <acamargo.vieira@gmail.com>
