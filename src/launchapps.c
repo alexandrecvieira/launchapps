@@ -45,7 +45,7 @@
 
 #define LAPPSICON "launchapps.png"
 #define BG "bglaunchapps.png"
-#define DEFAULTBG "/usr/share/lxpanel/images/launchapps-bg-default.jpg"
+#define DEFAULTBG "/usr/share/lxpanel/images/launchapps-bg-default.png"
 
 typedef enum {
 	LA_NONE, LA_ICONIFY
