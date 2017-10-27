@@ -1,4 +1,12 @@
 
+2017-10-27  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* launchapps.c (lapps_set_conf): Função lapps_get_wallpaper_conf_path renomeada e criação de diretório de configuração para armazenar o background temporário
+
+2017-10-26  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* Labels redimensionados e workaraound para fixar as posições dos ícones
+
 2017-10-25  Alexandre C Vieira <acamargo.vieira@gmail.com>
 
 	* launchapps.c (lapps_shadow_icons): Função para acrescentar sombra aos ícones
