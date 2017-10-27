@@ -44,8 +44,8 @@
 #include <wand/MagickWand.h>
 
 #define LAPPSICON "launchapps.png"
-#define BG "bglaunchapps.png"
-#define DEFAULTBG "/usr/share/lxpanel/images/launchapps-bg-default.png"
+#define BG "bglaunchapps.jpg"
+#define DEFAULTBG "/usr/share/lxpanel/images/launchapps-bg-default.jpg"
 
 typedef enum {
 	LA_NONE, LA_ICONIFY
@@ -132,7 +132,7 @@ static gboolean lapps_blur_background(LaunchAppsPlugin *lapps) {
 	}
 	outWand = CloneMagickWand(inWand);
 	MagickBlurImage(outWand, 0, 15);
-	MagickSetImageDepth(outWand, 32);
+	MagickSetImageDepth(outWand, 24);
 
 	MagickWriteImage(outWand, lapps->bg_image);
 
