@@ -32,6 +32,7 @@
 #include <gio/gio.h>
 #include <glib.h>
 #include <glib-object.h>
+#include <glib/gstdio.h>
 
 #include "lxpanel.private/dbg.h"
 #include "lxpanel.private/ev.h"
@@ -41,15 +42,16 @@
 
 #include <wand/MagickWand.h>
 
+#define LAPPSICON "launchapps.png"
+#define BGTMP "bglaunchapps.png"
+
 typedef enum {
 	LA_NONE, LA_ICONIFY
 } WindowCommand;
 
 GtkWidget *window;
-gchar *lapps_icon = "launchapps.png";
-gchar *wallpaper_conf_url, *lapps_wallpaper;
+gchar *wallpaper_conf_url, *lapps_wallpaper, *bg_file_tmp;
 gchar *lapps_wallpaper_cache = "";
-gchar *bg_file_tmp = "/tmp/bglaunchapps";
 gboolean running = FALSE;
 // grid[0] = rows | grid[1] = columns
 gint icon_size, s_height, s_width, grid[2];
@@ -76,8 +78,9 @@ static void lapps_get_wallpaper() {
 	}
 }
 
-static void lapps_get_wallpaper_conf_path() {
-	gchar *homedir;
+static void lapps_set_conf() {
+	gchar *homedir, *confdir;
+	gint dircreated;
 
 	if ((homedir = g_strdup(getenv("HOME"))) == NULL) {
 		homedir = g_strdup(getpwuid(getuid())->pw_dir);
@@ -90,6 +93,16 @@ static void lapps_get_wallpaper_conf_path() {
 	else
 		wallpaper_conf_url = g_strdup(
 				g_strconcat(g_strdup(homedir), "/.config/pcmanfm/lubuntu/desktop-items-0.conf", NULL));
+
+	confdir = g_strdup(
+			g_strconcat(g_strdup(homedir), "/.config/launchapps/", NULL));
+	if(!g_file_test (confdir, G_FILE_TEST_EXISTS & G_FILE_TEST_IS_DIR)){
+		dircreated = g_mkdir (confdir, 0700);
+		if(dircreated != 0)
+			confdir = "/tmp/";
+	}
+
+	bg_file_tmp = g_strconcat(g_strdup(confdir), BGTMP, NULL);
 
 	g_free(homedir);
 }
@@ -356,7 +369,7 @@ static void lapps_create_main_window() {
 	gtk_window_set_title(GTK_WINDOW(window), "Launch Apps");
 	gtk_widget_set_app_paintable(window, TRUE);
 	gtk_window_set_decorated(GTK_WINDOW(window), FALSE);
-	gtk_window_set_icon_from_file(GTK_WINDOW(window), g_strconcat("/usr/share/lxpanel/images/", lapps_icon, NULL),
+	gtk_window_set_icon_from_file(GTK_WINDOW(window), g_strconcat("/usr/share/lxpanel/images/", LAPPSICON, NULL),
 	NULL);
 	gtk_widget_add_events(window, GDK_BUTTON_PRESS_MASK);
 	g_signal_connect(G_OBJECT(window), "button-press-event", G_CALLBACK(lapps_main_window_close), NULL);
@@ -460,7 +473,7 @@ static GtkWidget *lapps_constructor(LXPanel *panel, config_setting_t *settings) 
 	gtk_container_add(GTK_CONTAINER(p), icon_box);
 	gtk_widget_show(icon_box);
 
-	lapps->icon_image = lxpanel_image_new_for_icon(panel, lapps_icon, -1, NULL);
+	lapps->icon_image = lxpanel_image_new_for_icon(panel, LAPPSICON, -1, NULL);
 
 	g_signal_connect(icon_box, "button_press_event", G_CALLBACK(lapps_button_clicked), (gpointer ) lapps);
 
@@ -468,7 +481,7 @@ static GtkWidget *lapps_constructor(LXPanel *panel, config_setting_t *settings) 
 	gtk_widget_show(lapps->icon_image);
 
 	if (wallpaper_conf_url == NULL)
-		lapps_get_wallpaper_conf_path();
+		lapps_set_conf();
 
 	lapps_set_icons_size();
 
