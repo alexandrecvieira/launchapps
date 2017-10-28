@@ -1,6 +1,9 @@
 
 2017-10-27  Alexandre C Vieira <acamargo.vieira@gmail.com>
 
+	* Image background alterada: jpg(-KB), imagem Debian verde
+	* Imagem png
+	* Imagem de background alterada para png e usada imagem do Debian
 	* launchapps.c (lapps_apply_configuration): Refatoração para evitar processamento do background na inicialização
 	* Added: Background Settings dialog
 	* launchapps.c (lapps_set_conf): Função lapps_get_wallpaper_conf_path renomeada e criação de diretório de configuração para armazenar o background temporário
