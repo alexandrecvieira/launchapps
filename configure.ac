@@ -31,9 +31,6 @@ AM_INIT_AUTOMAKE
 dnl this allows us specify individual liking flags for each target
 AM_PROG_CC_C_O 
 
-# ALL_LINGUAS=""
-# AM_GNU_GETTEXT
-
 dnl Initialize Libtool
 LT_INIT
 AC_PROG_RANLIB

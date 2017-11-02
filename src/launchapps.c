@@ -48,6 +48,9 @@
 #define BG "bglaunchapps.jpg"
 #define IMAGEPATH "/usr/share/lxpanel/images/"
 #define DEFAULTBG "launchapps-bg-default.jpg"
+#define DEFAULTFONTSIZE 15
+#define INDICATORWIDTH 30
+#define INDICATORHEIGHT 30
 
 typedef enum {
 	LA_NONE, LA_ICONIFY
@@ -55,9 +58,10 @@ typedef enum {
 
 GtkWidget *window;
 GtkWidget *table;
-//GtkWidget *indicator_table;
+GtkWidget *indicator;
 GtkWidget *fixed_layout;
-GList *app_list, *table_list, *indicators_list;
+GList *app_list;
+GList *table_list;
 gboolean running = FALSE;
 /* grid[0] = rows | grid[1] = columns */
 int icon_size, s_height, s_width, grid[2];
@@ -73,7 +77,7 @@ typedef struct {
 	char *bg_image;
 } LaunchAppsPlugin;
 
-static void lapps_update_indicators();
+static void lapps_update_indicator();
 static GtkWidget *lapps_table();
 
 static void lapps_set_icons_size() {
@@ -103,7 +107,7 @@ static void lapps_set_icons_size() {
 
 static void lapps_main_window_close(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
 	g_list_free(app_list);
-//	g_list_free(indicators);
+	//g_list_free(indicators_list);
 	g_list_free(table_list);
 	gtk_widget_destroy(window);
 	running = FALSE;
@@ -111,16 +115,16 @@ static void lapps_main_window_close(GtkWidget *widget, GdkEventButton *event, gp
 
 static void _lapps_main_window_close_() {
 	g_list_free(app_list);
-	//	g_list_free(indicators);
-		g_list_free(table_list);
+	//g_list_free(indicators_list);
+	g_list_free(table_list);
 	gtk_widget_destroy(window);
 	running = FALSE;
 }
 
 static void lapps_item_clicked_window_close(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
 	g_list_free(app_list);
-	//	g_list_free(indicators);
-		g_list_free(table_list);
+	//g_list_free(indicators_list);
+	g_list_free(table_list);
 	gtk_widget_destroy(window);
 	running = FALSE;
 }
@@ -129,12 +133,6 @@ static void lapps_exec(GtkWidget *widget, GdkEventButton *event, gpointer user_d
 	GAppInfo *app = g_app_info_dup((GAppInfo *) user_data);
 	g_app_info_launch(app, NULL, NULL, NULL);
 }
-
-/*static void lapps_indicator_clicked(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
-	int *page_active = (int *) user_data;
-	lapps_update_indicators(page_active);
-	lapps_populate_table(page_active);
-}*/
 
 static GdkPixbuf *lapps_application_icon(GAppInfo *appinfo) {
 	GdkPixbuf *icon;
@@ -176,7 +174,7 @@ static gboolean lapps_blur_background(LaunchAppsPlugin *lapps) {
 	return TRUE;
 }
 
-static GdkPixbuf *lapps_app_name(gchar *app_name) {
+static GdkPixbuf *lapps_app_name(gchar *app_name, double font_size) {
 	GdkPixbuf *bg_target_pix;
 	MagickWand *magick_wand, *c_wand;
 	DrawingWand *d_wand;
@@ -212,19 +210,19 @@ static GdkPixbuf *lapps_app_name(gchar *app_name) {
 	PixelSetColor(p_wand, "none");
 
 	// Create a new transparent image
-	MagickNewImage(magick_wand, 640, 480, p_wand); //640 x 480
+	MagickNewImage(magick_wand, 640, 480, p_wand);
 
 	// Set up a 16 point white font
 	PixelSetColor(p_wand, "white");
 	DrawSetFillColor(d_wand, p_wand);
-	DrawSetFont(d_wand, "Verdana");
-	DrawSetFontSize(d_wand, 14);
+	DrawSetFont(d_wand, "Sans Serif");
+	DrawSetFontSize(d_wand, font_size);
 
 	// Turn antialias on - not sure this makes a difference
 	DrawSetTextAntialias(d_wand, MagickTrue);
 
 	// Now draw the text
-	DrawAnnotation(d_wand, 0, 15, target_name);
+	DrawAnnotation(d_wand, 0, font_size, target_name);
 
 	// Draw the image on to the magick_wand
 	MagickDrawImage(magick_wand, d_wand);
@@ -372,7 +370,7 @@ static GtkWidget *lapps_table() {
 			g_signal_connect(G_OBJECT(event_box), "button-release-event", G_CALLBACK(lapps_item_clicked_window_close),
 					NULL);
 			gtk_box_pack_start(GTK_BOX(app_box), gtk_image_new_from_pixbuf(target_icon_pix), FALSE, FALSE, 0);
-			app_label = gtk_image_new_from_pixbuf(lapps_app_name(g_strdup(g_app_info_get_name(test_list->data))));
+			app_label = gtk_image_new_from_pixbuf(lapps_app_name(g_strdup(g_app_info_get_name(test_list->data)), DEFAULTFONTSIZE));
 			gtk_widget_set_size_request(app_label, 250, 50);
 			gtk_box_pack_start(GTK_BOX(app_box), app_label, FALSE, FALSE, 0);
 			gtk_table_attach(GTK_TABLE(table), event_box, j, j + 1, i, i + 1, GTK_SHRINK, GTK_FILL, 0, 0);
@@ -394,54 +392,19 @@ static GtkWidget *lapps_table() {
 	return table;
 }
 
-static void lapps_update_indicators() {
-	GtkWidget *indicator_event_box, *indicator_box, *indicator_table;
-	GList *test_list;
-	int j = 0;
+static void lapps_update_indicator(int page) {
+	char page_char[4];
 
-	indicators_list = NULL;
-	indicator_table = gtk_table_new(1, pages, TRUE);
-	//gtk_table_set_row_spacings(GTK_TABLE(table), 35);
-//	gtk_table_set_col_spacings(GTK_TABLE(table), 0);
-
-	for (int i = 0; i < pages; i++) {
-		indicator_box = gtk_vbox_new(TRUE, 0);
-		indicator_event_box = gtk_event_box_new();
-		gtk_event_box_set_visible_window(GTK_EVENT_BOX(indicator_event_box), FALSE);
-	//	if (page_index == i) {
-			gtk_box_pack_start(GTK_BOX(indicator_box),
-					gtk_image_new_from_file(g_strconcat(IMAGEPATH, "orange-indicator.png", NULL)), FALSE, FALSE, 5);
-	//	} else {
-			gtk_box_pack_start(GTK_BOX(indicator_box),
-					gtk_image_new_from_file(g_strconcat(IMAGEPATH, "white-indicator.png", NULL)), FALSE, FALSE, 5);
-			//page_index[i] = &i;
-			//g_signal_connect(G_OBJECT(indicator_event_box), "button-press-event", G_CALLBACK(lapps_indicator_clicked),
-			//		(gpointer ) page_index[i]);
-		//}
-		gtk_container_add(GTK_CONTAINER(indicator_event_box), indicator_box);
-		indicators_list = g_list_append(indicators_list, indicator_event_box);
-	}
-
-	for (test_list = indicators_list; test_list != NULL; test_list = test_list->next) {
-		//gtk_container_add(GTK_CONTAINER(indicator_box), test_list->data);
-		gtk_table_attach(GTK_TABLE(indicator_table), test_list->data, j, j + 1, 0, 1, GTK_SHRINK, GTK_FILL, 0, 0);
-		j++;
-	}
-
-	gtk_fixed_put(GTK_FIXED(fixed_layout), indicator_table, 250, 1000);
-	gtk_widget_show_all(GTK_WIDGET(g_list_nth(indicators_list, 0)->data));
-	//g_list_free(test_list);
-	//g_list_free(indicators);
-	// gtk_widget_draw (indicator_table, NULL);
-	//gtk_widget_show(indicator_table);
-	//gtk_widget_draw (fixed, NULL);
+	page++;
+	sprintf(page_char, "%d", page);
+	gtk_image_set_from_pixbuf(GTK_IMAGE(indicator), lapps_app_name(g_strdup(page_char), 24));
 }
 
 static void lapps_show_page(gboolean up) {
 	GList *test_list;
 	int i = 0;
 
-	if(up && page_count < pages){
+	if (up && page_count < pages) {
 		page_count++;
 		table = lapps_table();
 		table_list = g_list_append(table_list, table);
@@ -455,14 +418,9 @@ static void lapps_show_page(gboolean up) {
 		i++;
 	}
 
-	for (test_list = indicators_list; test_list != NULL; test_list = test_list->next) {
-			gtk_widget_hide_all(test_list->data);
-			if (i == page_index)
-				gtk_widget_show_all(test_list->data);
-			i++;
-		}
+	lapps_update_indicator(page_index);
 
-	gtk_widget_draw (window, NULL);
+	gtk_widget_draw(window, NULL);
 }
 
 static gboolean lapps_on_key_press(GtkWidget *widget, GdkEventKey *event, gpointer user_data) {
@@ -493,7 +451,6 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 	GdkPixbuf *image_pix, *target_image_pix;
 
 	app_list = NULL;
-	indicators_list = NULL;
 	table_list = NULL;
 
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -540,14 +497,21 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 
 	gtk_container_add(GTK_CONTAINER(layout), fixed_layout);
 
+	lapps_show_page(TRUE);
+
+	indicator_box = gtk_vbox_new(TRUE, 1);
+	indicator = gtk_image_new();
+	gtk_box_pack_start(GTK_BOX(indicator_box), indicator, FALSE, FALSE, 0);
+	gtk_widget_set_size_request(indicator, INDICATORWIDTH, INDICATORHEIGHT);
+	gtk_fixed_put(GTK_FIXED(fixed_layout), indicator_box, (s_width / 2) - INDICATORWIDTH, 1015);
+	lapps_update_indicator(page_index);
+
 	gtk_widget_show(layout);
 	gtk_widget_show(bg_image);
 	gtk_widget_show(fixed_layout);
+	gtk_widget_show_all(indicator_box);
 	gtk_widget_show(entry);
 	gtk_widget_show(window);
-
-	lapps_show_page(TRUE);
-	lapps_update_indicators();
 
 	gtk_main();
 }
