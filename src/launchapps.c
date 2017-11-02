@@ -48,7 +48,8 @@
 #define BG "bglaunchapps.jpg"
 #define IMAGEPATH "/usr/share/lxpanel/images/"
 #define DEFAULTBG "launchapps-bg-default.jpg"
-#define DEFAULTFONTSIZE 15
+#define DEFAULTFONTSIZE 16
+#define INDICATORFONTSIZE 32
 #define INDICATORWIDTH 30
 #define INDICATORHEIGHT 30
 
@@ -397,7 +398,7 @@ static void lapps_update_indicator(int page) {
 
 	page++;
 	sprintf(page_char, "%d", page);
-	gtk_image_set_from_pixbuf(GTK_IMAGE(indicator), lapps_app_name(g_strdup(page_char), 24));
+	gtk_image_set_from_pixbuf(GTK_IMAGE(indicator), lapps_app_name(g_strdup(page_char), INDICATORFONTSIZE));
 }
 
 static void lapps_show_page(gboolean up) {
@@ -446,6 +447,25 @@ static gboolean lapps_on_key_press(GtkWidget *widget, GdkEventKey *event, gpoint
 	return FALSE;
 }
 
+static gboolean lapps_on_mouse_scroll(GtkWidget *widget, GdkEventScroll *event, gpointer user_data) {
+	switch (event->direction) {
+	case GDK_SCROLL_DOWN:
+		(page_index > 0) ? page_index-- : 0;
+		lapps_show_page(FALSE);
+		break;
+
+	case GDK_SCROLL_UP:
+		(page_index < pages) ? page_index++ : 0;
+		(page_index < pages) ? lapps_show_page(TRUE) : 0;
+		break;
+
+	default:
+		return FALSE;
+	}
+
+	return FALSE;
+}
+
 static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 	GtkWidget *layout, *bg_image, *entry, *indicator_box;
 	GdkPixbuf *image_pix, *target_image_pix;
@@ -467,6 +487,7 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 	gtk_widget_add_events(window, GDK_KEY_RELEASE_MASK);
 	g_signal_connect(G_OBJECT(window), "button-press-event", G_CALLBACK(lapps_main_window_close), NULL);
 	g_signal_connect (G_OBJECT (window), "key-release-event", G_CALLBACK (lapps_on_key_press), NULL);
+	g_signal_connect(window, "scroll-event", G_CALLBACK(lapps_on_mouse_scroll), NULL);
 	g_signal_connect(G_OBJECT(window), "delete-event", gtk_main_quit, NULL);
 	image_pix = gdk_pixbuf_new_from_file(lapps->bg_image, NULL);
 	layout = gtk_layout_new(NULL, NULL);
