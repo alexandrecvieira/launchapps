@@ -1,6 +1,16 @@
 
+2017-11-05  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* Animação dos indicators
+	* Inicialização de todos os ponteiros que não estavam sendo inicilizados com NULL
+
+2017-11-03  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* Added: Forward, rewind indicators and it's callbacks, new launchapp icon
+
 2017-11-02  Alexandre C Vieira <acamargo.vieira@gmail.com>
 
+	* Removed: Old indicators images Changed: Fonts size
 	* Page indicator
 
 2017-11-01  Alexandre C Vieira <acamargo.vieira@gmail.com>
