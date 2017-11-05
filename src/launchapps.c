@@ -285,6 +285,7 @@ static GdkPixbuf *lapps_shadow_icons(GdkPixbuf *src_pix) {
 	gsize buffer_size;
 	MagickWand *src_wand = NULL;
 	MagickWand *dest_wand = NULL;
+	//PixelWand *border_color = NULL;
 
 	MagickWandGenesis();
 
@@ -301,6 +302,12 @@ static GdkPixbuf *lapps_shadow_icons(GdkPixbuf *src_pix) {
 	width = MagickGetImageWidth(dest_wand);
 	height = MagickGetImageHeight(dest_wand);
 	MagickSetImageDepth(dest_wand, 32);
+
+	//if(border){
+	//	border_color = NewPixelWand();
+	//	PixelSetColor(border_color, "gray");
+	//	MagickBorderImage(dest_wand, border_color, 4, 4);
+	//}
 
 	bg_target_pix = gdk_pixbuf_new(GDK_COLORSPACE_RGB, TRUE, 8, width, height);
 
@@ -320,6 +327,8 @@ static GdkPixbuf *lapps_shadow_icons(GdkPixbuf *src_pix) {
 		dest_wand = DestroyMagickWand(dest_wand);
 	if (shadow_color)
 		shadow_color = DestroyPixelWand(shadow_color);
+	//if (border_color)
+	//		border_color = DestroyPixelWand(border_color);
 
 	MagickWandTerminus();
 
@@ -402,22 +411,69 @@ static GtkWidget *lapps_table() {
 	return table;
 }
 
-static void lapps_update_indicator(int page) {
+static void lapps_update_indicator_rw(gboolean border) {
 	char page_char[4];
+	int page = page_index;
 
-	page++;
+	if (GTK_IMAGE(indicator_rw))
+				gtk_image_clear(GTK_IMAGE(indicator_rw));
+
+	gtk_image_set_from_file(GTK_IMAGE(indicator_rw), g_strconcat(IMAGEPATH, "go-previous.png", NULL));
+
+	if(page < pages)
+		page++;
+
 	sprintf(page_char, "%d", page);
-	gtk_image_set_from_pixbuf(GTK_IMAGE(indicator), lapps_app_name(g_strdup(page_char), INDICATORFONTSIZE));
 
-	if (page > 1)
-		gtk_image_set_from_pixbuf(GTK_IMAGE(indicator_rw), lapps_app_name("<", INDICATORFONTSIZE));
-	else
-		gtk_image_set_from_pixbuf(GTK_IMAGE(indicator_rw), lapps_app_name(" ", INDICATORFONTSIZE));
+	if (GTK_IMAGE(indicator))
+		gtk_image_set_from_pixbuf(GTK_IMAGE(indicator), lapps_app_name(g_strdup(page_char), INDICATORFONTSIZE));
 
-	if (page < pages)
-		gtk_image_set_from_pixbuf(GTK_IMAGE(indicator_fw), lapps_app_name(">", INDICATORFONTSIZE));
+	if (page > 1) {
+		if (GTK_IMAGE(indicator_rw) && border)
+			gtk_image_set_from_pixbuf(GTK_IMAGE(indicator_rw),
+					lapps_shadow_icons(gtk_image_get_pixbuf(GTK_IMAGE(indicator_rw))));
+	} else {
+		if (GTK_IMAGE(indicator_rw))
+			gtk_image_clear(GTK_IMAGE(indicator_rw));
+	}
+}
+
+static void lapps_update_indicator_fw(gboolean border) {
+	char page_char[4];
+	int page = page_index;
+
+	if (GTK_IMAGE(indicator_fw))
+			gtk_image_clear(GTK_IMAGE(indicator_fw));
+
+	gtk_image_set_from_file(GTK_IMAGE(indicator_fw), g_strconcat(IMAGEPATH, "go-next.png", NULL));
+
+	if(page < pages)
+		page++;
+
+	sprintf(page_char, "%d", page);
+
+	if (page < pages) {
+		if (GTK_IMAGE(indicator_fw) && border)
+			gtk_image_set_from_pixbuf(GTK_IMAGE(indicator_fw),
+					lapps_shadow_icons(gtk_image_get_pixbuf(GTK_IMAGE(indicator_fw))));
+	} else {
+		if (GTK_IMAGE(indicator_fw))
+			gtk_image_clear(GTK_IMAGE(indicator_fw));
+	}
+}
+
+static void lapps_indicator_rw_hover(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+	if (event->type == GDK_ENTER_NOTIFY || event->type == GDK_BUTTON_PRESS || event->type == GDK_BUTTON_RELEASE)
+		lapps_update_indicator_rw(TRUE);
 	else
-		gtk_image_set_from_pixbuf(GTK_IMAGE(indicator_fw), lapps_app_name(" ", INDICATORFONTSIZE));
+		lapps_update_indicator_rw(FALSE);
+}
+
+static void lapps_indicator_fw_hover(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+	if (event->type == GDK_ENTER_NOTIFY || event->type == GDK_BUTTON_PRESS || event->type == GDK_BUTTON_RELEASE)
+		lapps_update_indicator_fw(TRUE);
+	else
+		lapps_update_indicator_fw(FALSE);
 }
 
 static void lapps_show_page(gboolean up) {
@@ -438,7 +494,8 @@ static void lapps_show_page(gboolean up) {
 		i++;
 	}
 
-	lapps_update_indicator(page_index);
+	lapps_update_indicator_rw(FALSE);
+	lapps_update_indicator_fw(FALSE);
 
 	gtk_widget_draw(window, NULL);
 }
@@ -563,24 +620,31 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 	gtk_widget_show(indicator);
 
 	indicator_rw = gtk_image_new();
-	gtk_widget_set_size_request(GTK_WIDGET(indicator_rw), INDICATORWIDTH, INDICATORHEIGHT);
+	gtk_widget_set_size_request(GTK_WIDGET(indicator_rw), INDICATORWIDTH, INDICATORHEIGHT + 10);
 	indicator_event_box = gtk_event_box_new();
 	gtk_container_add(GTK_CONTAINER(indicator_event_box), GTK_WIDGET(indicator_rw));
 	gtk_event_box_set_visible_window(GTK_EVENT_BOX(indicator_event_box), FALSE);
-	gtk_fixed_put(GTK_FIXED(fixed_layout), indicator_event_box, (s_width / 2) - (INDICATORWIDTH * 2), 1015);
+	gtk_fixed_put(GTK_FIXED(fixed_layout), indicator_event_box, (s_width / 2) - (INDICATORWIDTH * 2), 1008);
 	g_signal_connect(G_OBJECT(indicator_event_box), "button-press-event", G_CALLBACK(lapps_indicator_rw_clicked), NULL);
+	g_signal_connect(G_OBJECT(indicator_event_box), "enter-notify-event", G_CALLBACK(lapps_indicator_rw_hover), NULL);
+	g_signal_connect(G_OBJECT(indicator_event_box), "leave-notify-event", G_CALLBACK(lapps_indicator_rw_hover), NULL);
+	g_signal_connect(G_OBJECT(indicator_event_box), "button-release-event", G_CALLBACK(lapps_indicator_rw_hover), NULL);
 	gtk_widget_show_all(indicator_event_box);
 
 	indicator_fw = gtk_image_new();
-	gtk_widget_set_size_request(GTK_WIDGET(indicator_fw), INDICATORWIDTH, INDICATORHEIGHT);
+	gtk_widget_set_size_request(GTK_WIDGET(indicator_fw), INDICATORWIDTH, INDICATORHEIGHT + 10);
 	indicator_event_box = gtk_event_box_new();
 	gtk_container_add(GTK_CONTAINER(indicator_event_box), GTK_WIDGET(indicator_fw));
 	gtk_event_box_set_visible_window(GTK_EVENT_BOX(indicator_event_box), FALSE);
-	gtk_fixed_put(GTK_FIXED(fixed_layout), indicator_event_box, (s_width / 2) + INDICATORWIDTH, 1015);
+	gtk_fixed_put(GTK_FIXED(fixed_layout), indicator_event_box, (s_width / 2) + INDICATORWIDTH, 1008);
 	g_signal_connect(G_OBJECT(indicator_event_box), "button-press-event", G_CALLBACK(lapps_indicator_fw_clicked), NULL);
+	g_signal_connect(G_OBJECT(indicator_event_box), "enter-notify-event", G_CALLBACK(lapps_indicator_fw_hover), NULL);
+	g_signal_connect(G_OBJECT(indicator_event_box), "leave-notify-event", G_CALLBACK(lapps_indicator_fw_hover), NULL);
+	g_signal_connect(G_OBJECT(indicator_event_box), "button-release-event", G_CALLBACK(lapps_indicator_fw_hover), NULL);
 	gtk_widget_show_all(indicator_event_box);
 
-	lapps_update_indicator(page_index);
+	lapps_update_indicator_rw(FALSE);
+	lapps_update_indicator_fw(FALSE);
 
 	gtk_widget_show(layout);
 	gtk_widget_show(bg_image);
