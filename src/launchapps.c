@@ -18,10 +18,6 @@
  *
  */
 
-#include <syslog.h>
-
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <unistd.h>
@@ -42,7 +38,7 @@
 #include <lxpanel/misc.h>
 #include <lxpanel/plugin.h>
 
-#include <wand/MagickWand.h>
+#include "lappsutil.h"
 
 #define LAPPSICON "launchapps.png"
 #define BG "bglaunchapps.jpg"
@@ -51,7 +47,7 @@
 #define DEFAULTFONTSIZE 16
 #define INDICATORFONTSIZE 32
 #define INDICATORWIDTH 32
-#define INDICATORHEIGHT 32
+#define INDICATORHEIGHT 42 /* INDICATORWIDTH + 10 */
 
 typedef enum {
 	LA_NONE, LA_ICONIFY
@@ -143,198 +139,6 @@ static GdkPixbuf *lapps_application_icon(GAppInfo *appinfo) {
 	return icon;
 }
 
-static gboolean lapps_blur_background(gchar *image, gchar *bg_image) {
-	MagickWand *inWand = NULL;
-	MagickWand *outWand = NULL;
-	MagickBooleanType status;
-
-	MagickWandGenesis();
-	inWand = NewMagickWand();
-	status = MagickReadImage(inWand, image);
-
-	if (status == MagickFalse) {
-		inWand = DestroyMagickWand(inWand);
-		MagickWandTerminus();
-		return FALSE;
-	}
-
-	outWand = CloneMagickWand(inWand);
-	MagickBlurImage(outWand, 0, 15);
-	MagickSetImageDepth(outWand, 32);
-
-	MagickWriteImage(outWand, bg_image);
-
-	if (inWand)
-		inWand = DestroyMagickWand(inWand);
-	if (outWand)
-		outWand = DestroyMagickWand(outWand);
-
-	MagickWandTerminus();
-
-	return TRUE;
-}
-
-static GdkPixbuf *lapps_app_name(gchar *app_name, double font_size) {
-	GdkPixbuf *bg_target_pix = NULL;
-	MagickWand *magick_wand = NULL;
-	MagickWand *c_wand = NULL;
-	DrawingWand *d_wand = NULL;
-	PixelWand *p_wand = NULL;
-	size_t width, height;
-	gint rowstride, row;
-	guchar *pixels = NULL;
-	gchar *name = NULL;
-	gchar *name_two = NULL;
-	gchar *target_name = NULL;
-	int i = 0;
-	int spaces = 0;
-
-	if (strlen(app_name) > 25) {
-		while (*app_name) {
-			if (*app_name == ' ')
-				spaces++;
-			if (spaces > 2)
-				break;
-			app_name++;
-			i++;
-		}
-		name = g_strndup(app_name - i, i);
-		name_two = g_strdup(app_name);
-		target_name = g_strconcat(name, "\n", name_two, NULL);
-	} else
-		target_name = g_strdup(app_name);
-
-	MagickWandGenesis();
-	magick_wand = NewMagickWand();
-	d_wand = NewDrawingWand();
-	p_wand = NewPixelWand();
-	PixelSetColor(p_wand, "none");
-
-	// Create a new transparent image
-	MagickNewImage(magick_wand, 640, 480, p_wand);
-
-	// Set up a 16 point white font
-	PixelSetColor(p_wand, "white");
-	DrawSetFillColor(d_wand, p_wand);
-	DrawSetFont(d_wand, "Sans Serif");
-	DrawSetFontSize(d_wand, font_size);
-
-	// Turn antialias on - not sure this makes a difference
-	DrawSetTextAntialias(d_wand, MagickTrue);
-
-	// Now draw the text
-	DrawAnnotation(d_wand, 0, font_size, target_name);
-
-	// Draw the image on to the magick_wand
-	MagickDrawImage(magick_wand, d_wand);
-
-	// Trim the image down to include only the text
-	MagickTrimImage(magick_wand, 0);
-
-	// equivalent to the command line +repage
-	MagickResetImagePage(magick_wand, "");
-
-	// Make a copy of the text image
-	c_wand = CloneMagickWand(magick_wand);
-
-	// Set the background colour to gray for the shadow
-	PixelSetColor(p_wand, "black");
-	MagickSetImageBackgroundColor(magick_wand, p_wand);
-
-	// Opacity is a real number indicating (apparently) percentage
-	MagickShadowImage(magick_wand, 100, 3, 0, 0);
-
-	// Composite the text on top of the shadow
-	MagickCompositeImage(magick_wand, c_wand, OverCompositeOp, 4, 4);
-
-	width = MagickGetImageWidth(magick_wand);
-	height = MagickGetImageHeight(magick_wand);
-
-	bg_target_pix = gdk_pixbuf_new(GDK_COLORSPACE_RGB, TRUE, 8, width, height);
-
-	pixels = gdk_pixbuf_get_pixels(bg_target_pix);
-	rowstride = gdk_pixbuf_get_rowstride(bg_target_pix);
-	MagickSetImageDepth(magick_wand, 32);
-
-	for (row = 0; row < height; row++) {
-		guchar *data = pixels + row * rowstride;
-		MagickExportImagePixels(magick_wand, 0, row, width, 1, "RGBA", CharPixel, data);
-	}
-
-	/* Clean up */
-	if (magick_wand)
-		magick_wand = DestroyMagickWand(magick_wand);
-	if (c_wand)
-		c_wand = DestroyMagickWand(c_wand);
-	if (d_wand)
-		d_wand = DestroyDrawingWand(d_wand);
-	if (p_wand)
-		p_wand = DestroyPixelWand(p_wand);
-
-	MagickWandTerminus();
-
-	return bg_target_pix;
-}
-
-static GdkPixbuf *lapps_shadow_icons(GdkPixbuf *src_pix) {
-	GdkPixbuf *bg_target_pix = NULL;
-	size_t width, height;
-	gint rowstride, row;
-	guchar *pixels = NULL;
-	gchar *buffer = NULL;
-	gsize buffer_size;
-	MagickWand *src_wand = NULL;
-	MagickWand *dest_wand = NULL;
-	//PixelWand *border_color = NULL;
-
-	MagickWandGenesis();
-
-	src_wand = NewMagickWand();
-	gdk_pixbuf_save_to_buffer(src_pix, &buffer, &buffer_size, "png", NULL);
-	MagickBooleanType read = MagickReadImageBlob(src_wand, buffer, buffer_size);
-	dest_wand = CloneMagickWand(src_wand);
-	PixelWand *shadow_color = NewPixelWand();
-	PixelSetColor(shadow_color, "black");
-	MagickWand *shadow = CloneMagickWand(dest_wand);
-	MagickSetImageBackgroundColor(dest_wand, shadow_color);
-	MagickShadowImage(dest_wand, 100, 2, 0, 0);
-	MagickCompositeImage(dest_wand, shadow, OverCompositeOp, 3, 3);
-	width = MagickGetImageWidth(dest_wand);
-	height = MagickGetImageHeight(dest_wand);
-	MagickSetImageDepth(dest_wand, 32);
-
-	//if(border){
-	//	border_color = NewPixelWand();
-	//	PixelSetColor(border_color, "gray");
-	//	MagickBorderImage(dest_wand, border_color, 4, 4);
-	//}
-
-	bg_target_pix = gdk_pixbuf_new(GDK_COLORSPACE_RGB, TRUE, 8, width, height);
-
-	pixels = gdk_pixbuf_get_pixels(bg_target_pix);
-	rowstride = gdk_pixbuf_get_rowstride(bg_target_pix);
-
-	for (row = 0; row < height; row++) {
-		guchar *data = pixels + row * rowstride;
-		MagickExportImagePixels(dest_wand, 0, row, width, 1, "RGBA", CharPixel, data);
-	}
-
-	if (shadow)
-		shadow = DestroyMagickWand(shadow);
-	if (src_wand)
-		src_wand = DestroyMagickWand(src_wand);
-	if (dest_wand)
-		dest_wand = DestroyMagickWand(dest_wand);
-	if (shadow_color)
-		shadow_color = DestroyPixelWand(shadow_color);
-	//if (border_color)
-	//		border_color = DestroyPixelWand(border_color);
-
-	MagickWandTerminus();
-
-	return bg_target_pix;
-}
-
 static void lapps_app_list() {
 	GList *test_list = NULL;
 	GList *all_app_list = NULL;
@@ -377,7 +181,7 @@ static GtkWidget *lapps_table() {
 	int j = 0;
 	for (test_list = app_list; test_list != NULL; test_list = test_list->next) {
 		if (g_app_info_get_icon(test_list->data) != NULL) {
-			icon_pix = lapps_shadow_icons(lapps_application_icon(test_list->data));
+			icon_pix = shadow_icon(lapps_application_icon(test_list->data));
 			target_icon_pix = gdk_pixbuf_scale_simple(icon_pix, icon_size, icon_size, GDK_INTERP_BILINEAR);
 			app_box = gtk_vbox_new(TRUE, 1);
 			event_box = gtk_event_box_new();
@@ -389,7 +193,7 @@ static GtkWidget *lapps_table() {
 					NULL);
 			gtk_box_pack_start(GTK_BOX(app_box), gtk_image_new_from_pixbuf(target_icon_pix), FALSE, FALSE, 0);
 			app_label = gtk_image_new_from_pixbuf(
-					lapps_app_name(g_strdup(g_app_info_get_name(test_list->data)), DEFAULTFONTSIZE));
+					create_app_name(g_strdup(g_app_info_get_name(test_list->data)), DEFAULTFONTSIZE));
 			gtk_widget_set_size_request(app_label, 250, 50);
 			gtk_box_pack_start(GTK_BOX(app_box), app_label, FALSE, FALSE, 0);
 			gtk_table_attach(GTK_TABLE(table), event_box, j, j + 1, i, i + 1, GTK_SHRINK, GTK_FILL, 0, 0);
@@ -426,12 +230,12 @@ static void lapps_update_indicator_rw(gboolean border) {
 	sprintf(page_char, "%d", page);
 
 	if (GTK_IMAGE(indicator))
-		gtk_image_set_from_pixbuf(GTK_IMAGE(indicator), lapps_app_name(g_strdup(page_char), INDICATORFONTSIZE));
+		gtk_image_set_from_pixbuf(GTK_IMAGE(indicator), create_app_name(g_strdup(page_char), INDICATORFONTSIZE));
 
 	if (page > 1) {
 		if (GTK_IMAGE(indicator_rw) && border)
 			gtk_image_set_from_pixbuf(GTK_IMAGE(indicator_rw),
-					lapps_shadow_icons(gtk_image_get_pixbuf(GTK_IMAGE(indicator_rw))));
+					shadow_icon(gtk_image_get_pixbuf(GTK_IMAGE(indicator_rw))));
 	} else {
 		if (GTK_IMAGE(indicator_rw))
 			gtk_image_clear(GTK_IMAGE(indicator_rw));
@@ -455,7 +259,7 @@ static void lapps_update_indicator_fw(gboolean border) {
 	if (page < pages) {
 		if (GTK_IMAGE(indicator_fw) && border)
 			gtk_image_set_from_pixbuf(GTK_IMAGE(indicator_fw),
-					lapps_shadow_icons(gtk_image_get_pixbuf(GTK_IMAGE(indicator_fw))));
+					shadow_icon(gtk_image_get_pixbuf(GTK_IMAGE(indicator_fw))));
 	} else {
 		if (GTK_IMAGE(indicator_fw))
 			gtk_image_clear(GTK_IMAGE(indicator_fw));
@@ -620,11 +424,11 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 	gtk_widget_show(indicator);
 
 	indicator_rw = gtk_image_new();
-	gtk_widget_set_size_request(GTK_WIDGET(indicator_rw), INDICATORWIDTH, INDICATORHEIGHT + 10);
+	gtk_widget_set_size_request(GTK_WIDGET(indicator_rw), INDICATORWIDTH, INDICATORHEIGHT);
 	indicator_event_box = gtk_event_box_new();
 	gtk_container_add(GTK_CONTAINER(indicator_event_box), GTK_WIDGET(indicator_rw));
 	gtk_event_box_set_visible_window(GTK_EVENT_BOX(indicator_event_box), FALSE);
-	gtk_fixed_put(GTK_FIXED(fixed_layout), indicator_event_box, (s_width / 2) - (INDICATORWIDTH * 2), 1008);
+	gtk_fixed_put(GTK_FIXED(fixed_layout), indicator_event_box, (s_width / 2) - (INDICATORWIDTH * 2), 1015);
 	g_signal_connect(G_OBJECT(indicator_event_box), "button-press-event", G_CALLBACK(lapps_indicator_rw_clicked), NULL);
 	g_signal_connect(G_OBJECT(indicator_event_box), "enter-notify-event", G_CALLBACK(lapps_indicator_rw_hover), NULL);
 	g_signal_connect(G_OBJECT(indicator_event_box), "leave-notify-event", G_CALLBACK(lapps_indicator_rw_hover), NULL);
@@ -632,11 +436,11 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 	gtk_widget_show_all(indicator_event_box);
 
 	indicator_fw = gtk_image_new();
-	gtk_widget_set_size_request(GTK_WIDGET(indicator_fw), INDICATORWIDTH, INDICATORHEIGHT + 10);
+	gtk_widget_set_size_request(GTK_WIDGET(indicator_fw), INDICATORWIDTH, INDICATORHEIGHT);
 	indicator_event_box = gtk_event_box_new();
 	gtk_container_add(GTK_CONTAINER(indicator_event_box), GTK_WIDGET(indicator_fw));
 	gtk_event_box_set_visible_window(GTK_EVENT_BOX(indicator_event_box), FALSE);
-	gtk_fixed_put(GTK_FIXED(fixed_layout), indicator_event_box, (s_width / 2) + INDICATORWIDTH, 1008);
+	gtk_fixed_put(GTK_FIXED(fixed_layout), indicator_event_box, (s_width / 2) + INDICATORWIDTH, 1015);
 	g_signal_connect(G_OBJECT(indicator_event_box), "button-press-event", G_CALLBACK(lapps_indicator_fw_clicked), NULL);
 	g_signal_connect(G_OBJECT(indicator_event_box), "enter-notify-event", G_CALLBACK(lapps_indicator_fw_hover), NULL);
 	g_signal_connect(G_OBJECT(indicator_event_box), "leave-notify-event", G_CALLBACK(lapps_indicator_fw_hover), NULL);
@@ -687,7 +491,7 @@ static gboolean lapps_apply_configuration(gpointer user_data) {
 
 	if (lapps->image != NULL) {
 		lapps->bg_image = g_strconcat(confdir, BG, NULL);
-		blurred = lapps_blur_background(g_strdup(lapps->image), g_strdup(lapps->bg_image));
+		blurred = blur_background(g_strdup(lapps->image), g_strdup(lapps->bg_image));
 		if (!blurred)
 			lapps->bg_image = g_strconcat(IMAGEPATH, DEFAULTBG, NULL);
 	}

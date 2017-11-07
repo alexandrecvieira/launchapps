@@ -8,7 +8,7 @@ lib_LTLIBRARIES = launchapps.la
 # Build information for each library
 
 # Sources for launchapps
-launchapps_la_SOURCES = launchapps.c
+launchapps_la_SOURCES = launchapps.c lappsutil.c
 # noinst_HEADERS = i18n.h
 
 # localedir = $(datadir)/locale
