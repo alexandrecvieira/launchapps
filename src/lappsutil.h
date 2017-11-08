@@ -21,11 +21,21 @@
 #ifndef LAPPSUTIL_H
 #define LAPPSUTIL_H
 
+#include <string.h>
 #include <gtk/gtk.h>
+#include <gio/gio.h>
+#include <glib.h>
 #include <glib-object.h>
+#include <glib/gstdio.h>
 
+#include <wand/MagickWand.h>
+
+extern int icon_size, s_height, s_width, grid[2];
+
+void set_icons_size();
 gboolean blur_background(gchar *image, gchar *bg_image);
 GdkPixbuf *create_app_name(gchar *app_name, double font_size);
 GdkPixbuf *shadow_icon(GdkPixbuf *src_pix);
+gint app_name_comparator(GAppInfo *item1, GAppInfo *item2);
 
 #endif /* LAPPSUTIL_H */

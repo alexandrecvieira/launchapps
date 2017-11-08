@@ -18,17 +18,14 @@
  *
  */
 
+#include "lappsutil.h"
+
 #include <string.h>
 #include <math.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <pwd.h>
 
-#include <gtk/gtk.h>
-#include <gio/gio.h>
-#include <glib.h>
-#include <glib-object.h>
-#include <glib/gstdio.h>
 #include <gdk/gdkkeysyms.h>
 
 #include <libfm/fm-gtk.h>
@@ -37,8 +34,6 @@
 #include <lxpanel/icon-grid.h>
 #include <lxpanel/misc.h>
 #include <lxpanel/plugin.h>
-
-#include "lappsutil.h"
 
 #define LAPPSICON "launchapps.png"
 #define BG "bglaunchapps.jpg"
@@ -62,8 +57,6 @@ GtkWidget *fixed_layout;
 GList *app_list;
 GList *table_list;
 gboolean running;
-/* grid[0] = rows | grid[1] = columns */
-int icon_size, s_height, s_width, grid[2];
 int pages, total_page_itens, page_index;
 int page_count;
 
@@ -75,33 +68,6 @@ typedef struct {
 	char *image_test;
 	char *bg_image;
 } LaunchAppsPlugin;
-
-static GtkWidget *lapps_table();
-
-static void lapps_set_icons_size() {
-	GdkScreen *screen = gdk_screen_get_default();
-	s_height = gdk_screen_get_height(screen);
-	s_width = gdk_screen_get_width(screen);
-	double suggested_size = (pow(s_width * s_height, ((double) (1.0 / 3.0))) / 1.6);
-
-	if (suggested_size < 27) {
-		icon_size = 24;
-	} else if (suggested_size >= 27 && suggested_size < 40) {
-		icon_size = 32;
-	} else if (suggested_size >= 40 && suggested_size < 56) {
-		icon_size = 48;
-	} else if (suggested_size >= 56) {
-		icon_size = 64;
-	}
-
-	if (s_width > s_height) { // normal landscape orientation
-		grid[0] = 4;
-		grid[1] = 5;
-	} else { // most likely a portrait orientation
-		grid[0] = 5;
-		grid[1] = 4;
-	}
-}
 
 static void lapps_main_window_close(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
 	g_list_free(app_list);
@@ -139,32 +105,7 @@ static GdkPixbuf *lapps_application_icon(GAppInfo *appinfo) {
 	return icon;
 }
 
-static void lapps_app_list() {
-	GList *test_list = NULL;
-	GList *all_app_list = NULL;
-	int app_count = 0;
-
-	all_app_list = g_app_info_get_all();
-
-	total_page_itens = grid[0] * grid[1];
-
-	app_list = NULL;
-
-	for (test_list = all_app_list; test_list != NULL; test_list = test_list->next) {
-		if ((g_app_info_get_icon(test_list->data) != NULL) && (g_app_info_get_description(test_list->data) != NULL)) {
-			app_list = g_list_append(app_list, g_app_info_dup(test_list->data));
-			app_count++;
-		}
-	}
-
-	pages = app_count / total_page_itens;
-	if (app_count % total_page_itens > 0)
-		pages++;
-
-	g_list_free(all_app_list);
-}
-
-static GtkWidget *lapps_table() {
+static GtkWidget *lapps_create_table() {
 	GtkWidget *app_box = NULL;
 	GtkWidget *event_box = NULL;
 	GtkWidget *app_label = NULL;
@@ -172,6 +113,7 @@ static GtkWidget *lapps_table() {
 	GList *test_list = NULL;
 	GdkPixbuf *icon_pix = NULL;
 	GdkPixbuf *target_icon_pix = NULL;
+	gchar *app_name = NULL;
 
 	table = gtk_table_new(grid[0], grid[1], TRUE);
 	gtk_table_set_row_spacings(GTK_TABLE(table), 50);
@@ -181,6 +123,7 @@ static GtkWidget *lapps_table() {
 	int j = 0;
 	for (test_list = app_list; test_list != NULL; test_list = test_list->next) {
 		if (g_app_info_get_icon(test_list->data) != NULL) {
+			app_name = g_strdup(g_app_info_get_name(test_list->data));
 			icon_pix = shadow_icon(lapps_application_icon(test_list->data));
 			target_icon_pix = gdk_pixbuf_scale_simple(icon_pix, icon_size, icon_size, GDK_INTERP_BILINEAR);
 			app_box = gtk_vbox_new(TRUE, 1);
@@ -192,8 +135,7 @@ static GtkWidget *lapps_table() {
 			g_signal_connect(G_OBJECT(event_box), "button-release-event", G_CALLBACK(lapps_item_clicked_window_close),
 					NULL);
 			gtk_box_pack_start(GTK_BOX(app_box), gtk_image_new_from_pixbuf(target_icon_pix), FALSE, FALSE, 0);
-			app_label = gtk_image_new_from_pixbuf(
-					create_app_name(g_strdup(g_app_info_get_name(test_list->data)), DEFAULTFONTSIZE));
+			app_label = gtk_image_new_from_pixbuf(create_app_name(app_name, DEFAULTFONTSIZE));
 			gtk_widget_set_size_request(app_label, 250, 50);
 			gtk_box_pack_start(GTK_BOX(app_box), app_label, FALSE, FALSE, 0);
 			gtk_table_attach(GTK_TABLE(table), event_box, j, j + 1, i, i + 1, GTK_SHRINK, GTK_FILL, 0, 0);
@@ -212,7 +154,35 @@ static GtkWidget *lapps_table() {
 		}
 	}
 
+	g_free(app_name);
+
 	return table;
+}
+
+static void lapps_app_list() {
+	GList *test_list = NULL;
+	GList *all_app_list = NULL;
+	int app_count = 0;
+
+	all_app_list = g_app_info_get_all();
+
+	total_page_itens = grid[0] * grid[1];
+
+	app_list = NULL;
+
+	for (test_list = all_app_list; test_list != NULL; test_list = test_list->next) {
+		if ((g_app_info_get_icon(test_list->data) != NULL) && (g_app_info_get_description(test_list->data) != NULL)) {
+			app_list = g_list_insert_sorted(app_list, g_app_info_dup(test_list->data),
+					(GCompareFunc) app_name_comparator);
+			app_count++;
+		}
+	}
+
+	pages = app_count / total_page_itens;
+	if (app_count % total_page_itens > 0)
+		pages++;
+
+	g_list_free(all_app_list);
 }
 
 static void lapps_update_indicator_rw(gboolean border) {
@@ -220,11 +190,11 @@ static void lapps_update_indicator_rw(gboolean border) {
 	int page = page_index;
 
 	if (GTK_IMAGE(indicator_rw))
-				gtk_image_clear(GTK_IMAGE(indicator_rw));
+		gtk_image_clear(GTK_IMAGE(indicator_rw));
 
 	gtk_image_set_from_file(GTK_IMAGE(indicator_rw), g_strconcat(IMAGEPATH, "go-previous.png", NULL));
 
-	if(page < pages)
+	if (page < pages)
 		page++;
 
 	sprintf(page_char, "%d", page);
@@ -247,11 +217,11 @@ static void lapps_update_indicator_fw(gboolean border) {
 	int page = page_index;
 
 	if (GTK_IMAGE(indicator_fw))
-			gtk_image_clear(GTK_IMAGE(indicator_fw));
+		gtk_image_clear(GTK_IMAGE(indicator_fw));
 
 	gtk_image_set_from_file(GTK_IMAGE(indicator_fw), g_strconcat(IMAGEPATH, "go-next.png", NULL));
 
-	if(page < pages)
+	if (page < pages)
 		page++;
 
 	sprintf(page_char, "%d", page);
@@ -286,7 +256,7 @@ static void lapps_show_page(gboolean up) {
 
 	if (up && page_count < pages) {
 		page_count++;
-		table = lapps_table();
+		table = lapps_create_table();
 		table_list = g_list_append(table_list, table);
 		gtk_fixed_put(GTK_FIXED(fixed_layout), table, 250, 220);
 	}
@@ -555,7 +525,7 @@ static GtkWidget *lapps_constructor(LXPanel *panel, config_setting_t *settings) 
 	gtk_container_add(GTK_CONTAINER(icon_box), lapps->icon_image);
 	gtk_widget_show(lapps->icon_image);
 
-	lapps_set_icons_size();
+	set_icons_size();
 
 	page_index = 0;
 

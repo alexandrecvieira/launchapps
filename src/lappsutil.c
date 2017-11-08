@@ -17,16 +17,11 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
  *
  */
+
 #include "lappsutil.h"
 
-#include <string.h>
-#include <gtk/gtk.h>
-#include <gio/gio.h>
-#include <glib.h>
-#include <glib-object.h>
-#include <glib/gstdio.h>
-
-#include <wand/MagickWand.h>
+/* grid[0] = rows | grid[1] = columns */
+int icon_size, s_height, s_width, grid[2];
 
 gboolean blur_background(gchar *image, gchar *bg_image) {
 	MagickWand *inWand = NULL;
@@ -209,4 +204,33 @@ GdkPixbuf *shadow_icon(GdkPixbuf *src_pix) {
 	MagickWandTerminus();
 
 	return bg_target_pix;
+}
+
+void set_icons_size() {
+	GdkScreen *screen = gdk_screen_get_default();
+	s_height = gdk_screen_get_height(screen);
+	s_width = gdk_screen_get_width(screen);
+	double suggested_size = (pow(s_width * s_height, ((double) (1.0 / 3.0))) / 1.6);
+
+	if (suggested_size < 27) {
+		icon_size = 24;
+	} else if (suggested_size >= 27 && suggested_size < 40) {
+		icon_size = 32;
+	} else if (suggested_size >= 40 && suggested_size < 56) {
+		icon_size = 48;
+	} else if (suggested_size >= 56) {
+		icon_size = 64;
+	}
+
+	if (s_width > s_height) { // normal landscape orientation
+		grid[0] = 4;
+		grid[1] = 5;
+	} else { // most likely a portrait orientation
+		grid[0] = 5;
+		grid[1] = 4;
+	}
+}
+
+gint app_name_comparator(GAppInfo *item1, GAppInfo *item2) {
+	return g_ascii_strcasecmp(g_app_info_get_name(item1), g_app_info_get_name(item2));
 }
