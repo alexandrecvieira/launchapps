@@ -20,6 +20,8 @@
 
 #include "lappsutil.h"
 
+#include <config.h>
+
 #include <string.h>
 #include <math.h>
 #include <unistd.h>
@@ -67,6 +69,7 @@ typedef struct {
 	char *image;
 	char *image_test;
 	char *bg_image;
+	char *version;
 } LaunchAppsPlugin;
 
 static void lapps_main_window_close(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
@@ -483,8 +486,12 @@ static void lapps_configuration(gpointer user_data) {
 /* Callback when the configuration dialog is to be shown. */
 static GtkWidget *lapps_configure(LXPanel *panel, GtkWidget *p) {
 	LaunchAppsPlugin *lapps = lxpanel_plugin_get_data(p);
-	return lxpanel_generic_config_dlg("Application Launcher", panel, lapps_apply_configuration, p, "Background image",
-			&lapps->image, CONF_TYPE_FILE_ENTRY,
+	return lxpanel_generic_config_dlg("Application Launcher", panel, lapps_apply_configuration, p,
+			g_strconcat("LaunchApps ", g_strdup(lapps->version), NULL), NULL, CONF_TYPE_TRIM,
+			" Application Launcher ", NULL, CONF_TYPE_TRIM,
+			"Copyright (C) 2017", NULL, CONF_TYPE_TRIM,
+			" ", NULL, CONF_TYPE_TRIM,
+			"Background image", &lapps->image, CONF_TYPE_FILE_ENTRY,
 			NULL);
 }
 
@@ -524,6 +531,8 @@ static GtkWidget *lapps_constructor(LXPanel *panel, config_setting_t *settings) 
 
 	gtk_container_add(GTK_CONTAINER(icon_box), lapps->icon_image);
 	gtk_widget_show(lapps->icon_image);
+
+	lapps->version = g_strdup(VERSION);
 
 	set_icons_size();
 
