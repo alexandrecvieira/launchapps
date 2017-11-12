@@ -127,34 +127,34 @@ static GtkWidget *lapps_create_table() {
 	int j = 0;
 
 	for (test_list = app_list; test_list != NULL; test_list = test_list->next) {
-			app_name = g_strdup(g_app_info_get_name(test_list->data));
-			icon_pix = shadow_icon(lapps_application_icon(test_list->data));
-			target_icon_pix = gdk_pixbuf_scale_simple(icon_pix, icon_size, icon_size, GDK_INTERP_BILINEAR);
-			app_box = gtk_vbox_new(TRUE, 1);
-			event_box = gtk_event_box_new();
-			gtk_event_box_set_visible_window(GTK_EVENT_BOX(event_box), FALSE);
-			gtk_container_add(GTK_CONTAINER(event_box), app_box);
-			g_signal_connect(G_OBJECT(event_box), "button-press-event", G_CALLBACK(lapps_exec),
-					(gpointer )g_app_info_dup(test_list->data));
-			g_signal_connect(G_OBJECT(event_box), "button-release-event", G_CALLBACK(lapps_item_clicked_window_close),
-					NULL);
-			gtk_box_pack_start(GTK_BOX(app_box), gtk_image_new_from_pixbuf(target_icon_pix), FALSE, FALSE, 0);
-			app_label = gtk_image_new_from_pixbuf(create_app_name(app_name, DEFAULTFONTSIZE));
-			gtk_widget_set_size_request(app_label, 250, 50);
-			gtk_box_pack_start(GTK_BOX(app_box), app_label, FALSE, FALSE, 0);
-			gtk_table_attach(GTK_TABLE(this_table), event_box, j, j + 1, i, i + 1, GTK_SHRINK, GTK_FILL, 0, 0);
-			g_object_unref(icon_pix);
-			g_object_unref(target_icon_pix);
-			if (j < grid[1] - 1) {
-				j++;
-			} else {
-				j = 0;
-				i++;
-			}
-			if (i == grid[0]) {
-				app_list = test_list->next;
-				break;
-			}
+		app_name = g_strdup(g_app_info_get_name(test_list->data));
+		icon_pix = shadow_icon(lapps_application_icon(test_list->data));
+		target_icon_pix = gdk_pixbuf_scale_simple(icon_pix, icon_size, icon_size, GDK_INTERP_BILINEAR);
+		app_box = gtk_vbox_new(TRUE, 1);
+		event_box = gtk_event_box_new();
+		gtk_event_box_set_visible_window(GTK_EVENT_BOX(event_box), FALSE);
+		gtk_container_add(GTK_CONTAINER(event_box), app_box);
+		g_signal_connect(G_OBJECT(event_box), "button-press-event", G_CALLBACK(lapps_exec),
+				(gpointer )g_app_info_dup(test_list->data));
+		g_signal_connect(G_OBJECT(event_box), "button-release-event", G_CALLBACK(lapps_item_clicked_window_close),
+				NULL);
+		gtk_box_pack_start(GTK_BOX(app_box), gtk_image_new_from_pixbuf(target_icon_pix), FALSE, FALSE, 0);
+		app_label = gtk_image_new_from_pixbuf(create_app_name(app_name, DEFAULTFONTSIZE));
+		gtk_widget_set_size_request(app_label, 250, 50);
+		gtk_box_pack_start(GTK_BOX(app_box), app_label, FALSE, FALSE, 0);
+		gtk_table_attach(GTK_TABLE(this_table), event_box, j, j + 1, i, i + 1, GTK_SHRINK, GTK_FILL, 0, 0);
+		g_object_unref(icon_pix);
+		g_object_unref(target_icon_pix);
+		if (j < grid[1] - 1) {
+			j++;
+		} else {
+			j = 0;
+			i++;
+		}
+		if (i == grid[0]) {
+			app_list = test_list->next;
+			break;
+		}
 	}
 
 	g_free(app_name);
@@ -178,8 +178,8 @@ static void lapps_app_list(gchar *filter) {
 		for (test_list = all_app_list; test_list != NULL; test_list = test_list->next) {
 			if ((g_app_info_get_icon(test_list->data) != NULL)
 					&& (g_app_info_get_description(test_list->data) != NULL)) {
-				gchar *name = g_ascii_strdown(g_app_info_get_name(test_list->data), -1);
-				gchar *desc = g_ascii_strdown(g_app_info_get_description(test_list->data), -1);
+				gchar *name = g_str_to_ascii(g_ascii_strdown(g_app_info_get_name(test_list->data), -1), NULL);
+				gchar *desc = g_str_to_ascii(g_ascii_strdown(g_app_info_get_description(test_list->data), -1), NULL);
 				if (g_strrstr(name, filter) || g_strrstr(desc, filter)) {
 					app_list = g_list_insert_sorted(app_list, g_app_info_dup(test_list->data),
 							(GCompareFunc) app_name_comparator);
@@ -189,7 +189,7 @@ static void lapps_app_list(gchar *filter) {
 		}
 	}
 
-	if(!filtered){
+	if (!filtered) {
 		for (test_list = all_app_list; test_list != NULL; test_list = test_list->next) {
 			if ((g_app_info_get_icon(test_list->data) != NULL)
 					&& (g_app_info_get_description(test_list->data) != NULL)) {
@@ -272,7 +272,7 @@ static void lapps_indicator_fw_hover(GtkWidget *widget, GdkEvent *event, gpointe
 		lapps_update_indicator_fw(FALSE);
 }
 
-static void lapps_clear(){
+static void lapps_clear() {
 	GList *test_list = NULL;
 
 	table = NULL;
@@ -288,8 +288,10 @@ static void lapps_show_page(gboolean up) {
 	GList *test_list = NULL;
 	int i = 0;
 
-	if (filtered)
-			lapps_clear();
+	if (filtered) {
+		filtered = FALSE;
+		lapps_clear();
+	}
 
 	if (up && page_count < pages) {
 		page_count++;
@@ -298,25 +300,11 @@ static void lapps_show_page(gboolean up) {
 		gtk_fixed_put(GTK_FIXED(fixed_layout), table, 250, 220);
 	}
 
-	if (up && filtered) {
-		page_count++;
-		table = lapps_create_table();
-		table_list = g_list_append(table_list, table);
-		gtk_fixed_put(GTK_FIXED(fixed_layout), table, 250, 220);
-		for (test_list = table_list; test_list != NULL; test_list = test_list->next) {
+	for (test_list = table_list; test_list != NULL; test_list = test_list->next) {
+		gtk_widget_hide_all(test_list->data);
+		if (i == page_index)
 			gtk_widget_show_all(test_list->data);
-			i++;
-		}
-	}
-
-	i = 0;
-	if(!filtered) {
-		for (test_list = table_list; test_list != NULL; test_list = test_list->next) {
-			gtk_widget_hide_all(test_list->data);
-			if (i == page_index)
-				gtk_widget_show_all(test_list->data);
-			i++;
-		}
+		i++;
 	}
 
 	lapps_update_indicator_rw(FALSE);
@@ -329,7 +317,7 @@ static gboolean lapps_on_key_press(GtkWidget *widget, GdkEventKey *event, gpoint
 	switch (event->keyval) {
 	case GDK_KEY_Down:
 		(page_index > 0) ? page_index-- : 0;
-		lapps_show_page(FALSE);
+		(pages > 1) ? lapps_show_page(FALSE) : 0;
 		break;
 
 	case GDK_KEY_Up:
@@ -352,7 +340,7 @@ static gboolean lapps_on_mouse_scroll(GtkWidget *widget, GdkEventScroll *event, 
 	switch (event->direction) {
 	case GDK_SCROLL_DOWN:
 		(page_index > 0) ? page_index-- : 0;
-		lapps_show_page(FALSE);
+		(pages > 1) ? lapps_show_page(FALSE) : 0;
 		break;
 
 	case GDK_SCROLL_UP:
@@ -369,7 +357,7 @@ static gboolean lapps_on_mouse_scroll(GtkWidget *widget, GdkEventScroll *event, 
 
 static void lapps_indicator_rw_clicked(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
 	(page_index > 0) ? page_index-- : 0;
-	lapps_show_page(FALSE);
+	(pages > 1) ? lapps_show_page(FALSE) : 0;
 }
 
 static void lapps_indicator_fw_clicked(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
@@ -398,10 +386,9 @@ static void lapps_search(GtkEntry *entry, GtkEntryIconPosition icon_pos, GdkEven
 		}
 	}
 
-	if (((GTK_ENTRY_ICON_PRIMARY == icon_pos) && filtered)) {
+	if (GTK_ENTRY_ICON_PRIMARY == icon_pos) {
 		gtk_entry_set_text(entry, "");
 		gtk_entry_set_icon_from_stock(GTK_ENTRY(entry), GTK_ENTRY_ICON_PRIMARY, NULL);
-		filtered = FALSE;
 		lapps_clear();
 		lapps_app_list(NULL);
 		lapps_show_page(TRUE);
@@ -409,7 +396,7 @@ static void lapps_search(GtkEntry *entry, GtkEntryIconPosition icon_pos, GdkEven
 }
 
 static void lapps_search_(GtkEntry *entry, gpointer userdata) {
-	const gchar *filter = gtk_entry_get_text(entry);
+	const gchar *filter = g_ascii_strdown(gtk_entry_get_text(entry), -1);
 
 	page_index = 0;
 	page_count = 0;
@@ -417,7 +404,7 @@ static void lapps_search_(GtkEntry *entry, gpointer userdata) {
 	if (strlen(filter) > 0) {
 		filtered = TRUE;
 		gtk_entry_set_icon_from_stock(GTK_ENTRY(entry), GTK_ENTRY_ICON_PRIMARY, GTK_STOCK_CLEAR);
-		lapps_app_list(g_ascii_strdown(filter, -1));
+		lapps_app_list(g_str_to_ascii(filter, NULL));
 		lapps_show_page(TRUE);
 		return;
 	} else {
@@ -476,7 +463,7 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 
 	// search entry
 	entry = gtk_entry_new();
-	gtk_entry_set_icon_from_stock (GTK_ENTRY(entry), GTK_ENTRY_ICON_SECONDARY, GTK_STOCK_FIND);
+	gtk_entry_set_icon_from_stock(GTK_ENTRY(entry), GTK_ENTRY_ICON_SECONDARY, GTK_STOCK_FIND);
 	g_signal_connect(GTK_OBJECT(entry), "icon-press", G_CALLBACK(lapps_search), NULL);
 	g_signal_connect(GTK_OBJECT(entry), "activate", G_CALLBACK(lapps_search_), NULL);
 	gtk_fixed_put(GTK_FIXED(fixed_layout), GTK_WIDGET(entry), (s_width / 2) - 125, 50);
