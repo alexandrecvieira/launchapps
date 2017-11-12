@@ -1,4 +1,16 @@
 
+2017-11-10  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* launchapps.c (lapps_configure): Added about info
+
+2017-11-09  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* Icone definitivo
+
+2017-11-08  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* lappsutil.c (app_name_comparator): Sorting function
+
 2017-11-07  Alexandre C Vieira <acamargo.vieira@gmail.com>
 
 	* Funções de manipulação de imagens colocadas em arquivo separado(lappsutil.c), icone definitivo by DevianArt
