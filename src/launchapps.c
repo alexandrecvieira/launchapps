@@ -118,6 +118,7 @@ static GtkWidget *lapps_create_table() {
 	GdkPixbuf *icon_pix = NULL;
 	GdkPixbuf *target_icon_pix = NULL;
 	gchar *app_name = NULL;
+	gchar *app_name_old = NULL;
 
 	this_table = gtk_table_new(grid[0], grid[1], TRUE);
 	gtk_table_set_row_spacings(GTK_TABLE(this_table), 50);
@@ -128,33 +129,36 @@ static GtkWidget *lapps_create_table() {
 
 	for (test_list = app_list; test_list != NULL; test_list = test_list->next) {
 		app_name = g_strdup(g_app_info_get_name(test_list->data));
-		icon_pix = shadow_icon(lapps_application_icon(test_list->data));
-		target_icon_pix = gdk_pixbuf_scale_simple(icon_pix, icon_size, icon_size, GDK_INTERP_BILINEAR);
-		app_box = gtk_vbox_new(TRUE, 1);
-		event_box = gtk_event_box_new();
-		gtk_event_box_set_visible_window(GTK_EVENT_BOX(event_box), FALSE);
-		gtk_container_add(GTK_CONTAINER(event_box), app_box);
-		g_signal_connect(G_OBJECT(event_box), "button-press-event", G_CALLBACK(lapps_exec),
-				(gpointer )g_app_info_dup(test_list->data));
-		g_signal_connect(G_OBJECT(event_box), "button-release-event", G_CALLBACK(lapps_item_clicked_window_close),
-				NULL);
-		gtk_box_pack_start(GTK_BOX(app_box), gtk_image_new_from_pixbuf(target_icon_pix), FALSE, FALSE, 0);
-		app_label = gtk_image_new_from_pixbuf(create_app_name(app_name, DEFAULTFONTSIZE));
-		gtk_widget_set_size_request(app_label, 250, 50);
-		gtk_box_pack_start(GTK_BOX(app_box), app_label, FALSE, FALSE, 0);
-		gtk_table_attach(GTK_TABLE(this_table), event_box, j, j + 1, i, i + 1, GTK_SHRINK, GTK_FILL, 0, 0);
-		g_object_unref(icon_pix);
-		g_object_unref(target_icon_pix);
-		if (j < grid[1] - 1) {
-			j++;
-		} else {
-			j = 0;
-			i++;
+		if (g_strcmp0(app_name, app_name_old) != 0) {
+			icon_pix = shadow_icon(lapps_application_icon(test_list->data));
+			target_icon_pix = gdk_pixbuf_scale_simple(icon_pix, icon_size, icon_size, GDK_INTERP_BILINEAR);
+			app_box = gtk_vbox_new(TRUE, 1);
+			event_box = gtk_event_box_new();
+			gtk_event_box_set_visible_window(GTK_EVENT_BOX(event_box), FALSE);
+			gtk_container_add(GTK_CONTAINER(event_box), app_box);
+			g_signal_connect(G_OBJECT(event_box), "button-press-event", G_CALLBACK(lapps_exec),
+					(gpointer )g_app_info_dup(test_list->data));
+			g_signal_connect(G_OBJECT(event_box), "button-release-event", G_CALLBACK(lapps_item_clicked_window_close),
+					NULL);
+			gtk_box_pack_start(GTK_BOX(app_box), gtk_image_new_from_pixbuf(target_icon_pix), FALSE, FALSE, 0);
+			app_label = gtk_image_new_from_pixbuf(create_app_name(app_name, DEFAULTFONTSIZE));
+			gtk_widget_set_size_request(app_label, 250, 50);
+			gtk_box_pack_start(GTK_BOX(app_box), app_label, FALSE, FALSE, 0);
+			gtk_table_attach(GTK_TABLE(this_table), event_box, j, j + 1, i, i + 1, GTK_SHRINK, GTK_FILL, 0, 0);
+			g_object_unref(icon_pix);
+			g_object_unref(target_icon_pix);
+			if (j < grid[1] - 1) {
+				j++;
+			} else {
+				j = 0;
+				i++;
+			}
+			if (i == grid[0]) {
+				app_list = test_list->next;
+				break;
+			}
 		}
-		if (i == grid[0]) {
-			app_list = test_list->next;
-			break;
-		}
+		app_name_old = g_strdup(app_name);
 	}
 
 	g_free(app_name);
@@ -176,8 +180,8 @@ static void lapps_app_list(gchar *filter) {
 
 	if (filtered && strlen(filter) > 0) {
 		for (test_list = all_app_list; test_list != NULL; test_list = test_list->next) {
-			if ((g_app_info_get_icon(test_list->data) != NULL)
-					&& (g_app_info_get_description(test_list->data) != NULL)) {
+			if ((g_app_info_get_icon(test_list->data) != NULL) && (g_app_info_get_description(test_list->data) != NULL)
+					&& g_app_info_should_show(test_list->data)) {
 				gchar *name = g_str_to_ascii(g_ascii_strdown(g_app_info_get_name(test_list->data), -1), NULL);
 				gchar *desc = g_str_to_ascii(g_ascii_strdown(g_app_info_get_description(test_list->data), -1), NULL);
 				if (g_strrstr(name, filter) || g_strrstr(desc, filter)) {
@@ -191,8 +195,8 @@ static void lapps_app_list(gchar *filter) {
 
 	if (!filtered) {
 		for (test_list = all_app_list; test_list != NULL; test_list = test_list->next) {
-			if ((g_app_info_get_icon(test_list->data) != NULL)
-					&& (g_app_info_get_description(test_list->data) != NULL)) {
+			if ((g_app_info_get_icon(test_list->data) != NULL) && (g_app_info_get_description(test_list->data) != NULL)
+					&& g_app_info_should_show(test_list->data)) {
 				app_list = g_list_insert_sorted(app_list, g_app_info_dup(test_list->data),
 						(GCompareFunc) app_name_comparator);
 				app_count++;
