@@ -1,6 +1,7 @@
 
 2017-11-14  Alexandre C Vieira <acamargo.vieira@gmail.com>
 
+	* launchapps.c (lapps_pages): Dynamic calculation of pages
 	* Atualização README.md
 
 2017-11-13  Alexandre C Vieira <acamargo.vieira@gmail.com>
