@@ -22,7 +22,6 @@
 
 #include <config.h>
 
-#include <string.h>
 #include <math.h>
 #include <unistd.h>
 #include <sys/types.h>

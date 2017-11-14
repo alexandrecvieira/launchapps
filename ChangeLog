@@ -1,4 +1,8 @@
 
+2017-11-13  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* launchapps.c (lapps_app_list): show only the applications that should be shown
+
 2017-11-12  Alexandre C Vieira <acamargo.vieira@gmail.com>
 
 	* Resolvido problema de paginação dos resultados da busca
