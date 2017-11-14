@@ -43,6 +43,28 @@ Para atualizar o LXPanel para a versão 0.9.3 no **Debian Jessie** faça a insta
 
 ##### LaunchApps
 
+**Teclas de atalho:**
+
+* Esc &rArr; Fecha
+
+* Enter &rArr; Executa a busca
+
+* &uarr; &rArr; Avança uma página
+
+* &darr; &rArr; Retrocede uma página
+
+* Roda do mouse &rArr; Para frente: avança uma página, para trás: retrocede uma página
+
+**Cliques**
+
+* Clique sobre o ícone do programa &rArr; Executa o programa e fecha a janela do LaunchApps
+
+* ![indicators](https://user-images.githubusercontent.com/20074560/32782503-c9547f4e-c92f-11e7-939a-6676a6385857.png) &rArr; Avança ou retrocede uma página
+
+* ![lupa](https://user-images.githubusercontent.com/20074560/32782302-1cb73ca4-c92f-11e7-9e7f-e72230a0b06d.png) &rArr; Executa a busca
+
+* ![clear](https://user-images.githubusercontent.com/20074560/32782376-58e7315c-c92f-11e7-8530-20f1c9efb382.png) &rArr; limpa o campo de busca e volta para o ínicio
+ 
 ![launchapps](https://user-images.githubusercontent.com/20074560/32780952-463bb7bc-c92a-11e7-9013-ddd843ed0ac4.gif)
 
 #### Testado no LXPanel versão 0.9.3
@@ -52,6 +74,11 @@ Para atualizar o LXPanel para a versão 0.9.3 no **Debian Jessie** faça a insta
 #### Não testado no LXPanel 0.7.2
 
 ## CHANGELOG
+
+### [Unreleased]
+
+### [1.0.0] - 2017-11-14
+- Release 1.0.0
 
 
 
