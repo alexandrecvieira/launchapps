@@ -1,4 +1,8 @@
 
+2017-11-16  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* Release 1.0.1: Added: Dynamic calculation of pages
+
 2017-11-14  Alexandre C Vieira <acamargo.vieira@gmail.com>
 
 	* launchapps.c (lapps_pages): Dynamic calculation of pages
