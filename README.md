@@ -77,6 +77,13 @@ Para atualizar o LXPanel para a versão 0.9.3 no **Debian Jessie** faça a insta
 
 ### [Unreleased]
 
+### [1.0.2] - 2018-01-27
+### Fixed
+- Alterado ícone para "system-run"
+
+### Added
+- Tip "LaunchApps"
+
 ### [1.0.1] - 2017-11-16
 #### Fixed
 - Dynamic calculation of pages
