@@ -1,5 +1,4 @@
 launchapps_images_DATA = \
-	launchapps.png \
 	launchapps-bg-default.jpg \
 	go-next.png \
 	go-previous.png

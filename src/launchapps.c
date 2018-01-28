@@ -32,11 +32,12 @@
 #include <libfm/fm-gtk.h>
 #include "lxpanel.private/dbg.h"
 #include "lxpanel.private/ev.h"
+#include "lxpanel.private/private.h"
 #include <lxpanel/icon-grid.h>
 #include <lxpanel/misc.h>
 #include <lxpanel/plugin.h>
 
-#define LAPPSICON "launchapps.png"
+#define LAPPSICON "system-run"
 #define BG "bglaunchapps.jpg"
 #define IMAGEPATH "/usr/share/lxpanel/images/"
 #define DEFAULTBG "launchapps-bg-default.jpg"
@@ -454,8 +455,7 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 	gtk_window_set_title(GTK_WINDOW(window), "Launch Apps");
 	gtk_widget_set_app_paintable(window, TRUE);
 	gtk_window_set_decorated(GTK_WINDOW(window), FALSE);
-	gtk_window_set_icon_from_file(GTK_WINDOW(window), g_strconcat(IMAGEPATH, LAPPSICON, NULL),
-	NULL);
+	gtk_window_set_icon_name(GTK_WINDOW(window), LAPPSICON);
 	gtk_widget_add_events(window, GDK_BUTTON_PRESS_MASK);
 	gtk_widget_add_events(window, GDK_KEY_RELEASE_MASK);
 	g_signal_connect(G_OBJECT(window), "button-press-event", G_CALLBACK(lapps_main_window_close), NULL);
@@ -627,7 +627,8 @@ static GtkWidget *lapps_constructor(LXPanel *panel, config_setting_t *settings) 
 	gtk_container_add(GTK_CONTAINER(p), icon_box);
 	gtk_widget_show(icon_box);
 
-	lapps->icon_image = lxpanel_image_new_for_icon(panel, LAPPSICON, -1, NULL);
+	lapps->icon_image = gtk_image_new_from_icon_name(LAPPSICON, lapps->panel->priv->icon_size);
+	gtk_widget_set_tooltip_text(lapps->icon_image, "LaunchApps");
 
 	g_signal_connect(icon_box, "button_release_event", G_CALLBACK(lapps_button_clicked), (gpointer ) lapps);
 
