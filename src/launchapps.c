@@ -327,9 +327,22 @@ static void lapps_clear() {
 
 static void lapps_show_page(gboolean up) {
 	GList *test_list = NULL;
+
+	// teste frame ***********************
 	GtkWidget *frame = gtk_frame_new(NULL);
 	gtk_frame_set_shadow_type (GTK_FRAME(frame), GTK_SHADOW_OUT);
 	gtk_widget_show(frame);
+	GtkWidget *label = gtk_label_new (NULL);
+	const char *str = "Recent Applications";
+	const char *format = "<span foreground=\"white\" size=\"medium\"><b>\%s</b></span>";
+	char *markup;
+	markup = g_markup_printf_escaped (format, str);
+	gtk_label_set_markup (GTK_LABEL (label), markup);
+	g_free (markup);
+	gtk_container_add(GTK_CONTAINER(frame), label);
+	gtk_widget_show(label);
+
+	//************************************
 
 	int i = 0;
 
