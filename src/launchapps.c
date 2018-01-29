@@ -57,6 +57,7 @@ GtkWidget *indicator_fw;
 GtkWidget *indicator_rw;
 GtkWidget *fixed_layout;
 GList *app_list;
+GList *favorite_list;
 GList *table_list;
 gboolean running;
 gboolean filtered;
@@ -98,6 +99,10 @@ static void lapps_item_clicked_window_close(GtkWidget *widget, GdkEventButton *e
 
 static void lapps_exec(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
 	GAppInfo *app = g_app_info_dup((GAppInfo *) user_data);
+	gchar *app_name = g_strdup(g_app_info_get_name(app));
+	if(g_list_find(favorite_list, app_name) == NULL)
+		favorite_list = g_list_append(favorite_list, g_strdup(app_name));
+	g_free(app_name);
 	g_app_info_launch(app, NULL, NULL, NULL);
 }
 
@@ -172,6 +177,7 @@ static GtkWidget *lapps_create_table() {
 
 static void lapps_app_list(gchar *filter) {
 	GList *test_list = NULL;
+	GList *favorite_test_list = NULL;
 	GList *all_app_list = NULL;
 
 	all_app_list = g_app_info_get_all();
@@ -195,12 +201,34 @@ static void lapps_app_list(gchar *filter) {
 	}
 
 	if (!filtered) {
+		/*for (favorite_test_list = favorite_list; favorite_test_list != NULL;
+				favorite_test_list = favorite_test_list->next) {
+			for (test_list = all_app_list; test_list != NULL; test_list = test_list->next) {
+				if ((g_app_info_get_icon(test_list->data) != NULL)
+						&& (g_app_info_get_description(test_list->data) != NULL)
+						&& g_app_info_should_show(test_list->data)) {
+					if (g_strcmp0(favorite_test_list->data, g_strdup(g_app_info_get_name(test_list->data))) == 0)
+						app_list = g_list_append(app_list, g_app_info_dup(test_list->data));
+					app_count++;
+				}
+			}
+		}*/
+
 		for (test_list = all_app_list; test_list != NULL; test_list = test_list->next) {
 			if ((g_app_info_get_icon(test_list->data) != NULL) && (g_app_info_get_description(test_list->data) != NULL)
 					&& g_app_info_should_show(test_list->data)) {
 				app_list = g_list_insert_sorted(app_list, g_app_info_dup(test_list->data),
 						(GCompareFunc) app_name_comparator);
 				app_count++;
+			}
+		}
+
+		for (favorite_test_list = favorite_list; favorite_test_list != NULL;
+				favorite_test_list = favorite_test_list->next) {
+			for (test_list = app_list; test_list != NULL; test_list = test_list->next) {
+				if (g_strcmp0(favorite_test_list->data, g_strdup(g_app_info_get_name(test_list->data))) == 0)
+					app_list = g_list_prepend(app_list, test_list->data); //g_list_append(app_list, g_app_info_dup(test_list->data));
+				//app_count++;
 			}
 		}
 	}
@@ -642,6 +670,8 @@ static GtkWidget *lapps_constructor(LXPanel *panel, config_setting_t *settings) 
 	page_index = 0;
 
 	running = FALSE;
+
+	favorite_list = NULL;
 
 	return p;
 }
