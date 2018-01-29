@@ -40,6 +40,7 @@
 #define LAPPSICON "system-run"
 #define BG "bglaunchapps.jpg"
 #define IMAGEPATH "/usr/share/lxpanel/images/"
+#define CONFPATH "/.config/launchapps/"
 #define DEFAULTBG "launchapps-bg-default.jpg"
 #define DEFAULTFONTSIZE 16
 #define INDICATORFONTSIZE 32
@@ -52,6 +53,7 @@ typedef enum {
 
 GtkWidget *window;
 GtkWidget *table;
+GtkWidget *favorite_table;
 GtkWidget *indicator;
 GtkWidget *indicator_fw;
 GtkWidget *indicator_rw;
@@ -101,7 +103,7 @@ static void lapps_exec(GtkWidget *widget, GdkEventButton *event, gpointer user_d
 	GAppInfo *app = g_app_info_dup((GAppInfo *) user_data);
 	gchar *app_name = g_strdup(g_app_info_get_name(app));
 	if(g_list_find(favorite_list, app_name) == NULL)
-		favorite_list = g_list_append(favorite_list, g_strdup(app_name));
+		favorite_list = g_list_prepend(favorite_list, g_strdup(app_name));
 	g_free(app_name);
 	g_app_info_launch(app, NULL, NULL, NULL);
 }
@@ -177,8 +179,9 @@ static GtkWidget *lapps_create_table() {
 
 static void lapps_app_list(gchar *filter) {
 	GList *test_list = NULL;
-	GList *favorite_test_list = NULL;
 	GList *all_app_list = NULL;
+	// GList *favorite_test_list = NULL;
+	//gchar *app_name = NULL;
 
 	all_app_list = g_app_info_get_all();
 
@@ -201,39 +204,34 @@ static void lapps_app_list(gchar *filter) {
 	}
 
 	if (!filtered) {
-		/*for (favorite_test_list = favorite_list; favorite_test_list != NULL;
-				favorite_test_list = favorite_test_list->next) {
-			for (test_list = all_app_list; test_list != NULL; test_list = test_list->next) {
-				if ((g_app_info_get_icon(test_list->data) != NULL)
-						&& (g_app_info_get_description(test_list->data) != NULL)
-						&& g_app_info_should_show(test_list->data)) {
-					if (g_strcmp0(favorite_test_list->data, g_strdup(g_app_info_get_name(test_list->data))) == 0)
-						app_list = g_list_append(app_list, g_app_info_dup(test_list->data));
-					app_count++;
-				}
-			}
-		}*/
-
 		for (test_list = all_app_list; test_list != NULL; test_list = test_list->next) {
 			if ((g_app_info_get_icon(test_list->data) != NULL) && (g_app_info_get_description(test_list->data) != NULL)
 					&& g_app_info_should_show(test_list->data)) {
+				//app_name = g_strdup(g_app_info_get_name(test_list->data));
 				app_list = g_list_insert_sorted(app_list, g_app_info_dup(test_list->data),
 						(GCompareFunc) app_name_comparator);
 				app_count++;
 			}
 		}
 
-		for (favorite_test_list = favorite_list; favorite_test_list != NULL;
+		/*for (favorite_test_list = favorite_list; favorite_test_list != NULL;
 				favorite_test_list = favorite_test_list->next) {
-			for (test_list = app_list; test_list != NULL; test_list = test_list->next) {
-				if (g_strcmp0(favorite_test_list->data, g_strdup(g_app_info_get_name(test_list->data))) == 0)
-					app_list = g_list_prepend(app_list, test_list->data); //g_list_append(app_list, g_app_info_dup(test_list->data));
-				//app_count++;
+			for (test_list = all_app_list; test_list != NULL; test_list = test_list->next) {
+				if ((g_app_info_get_icon(test_list->data) != NULL)
+						&& (g_app_info_get_description(test_list->data) != NULL)
+						&& g_app_info_should_show(test_list->data)) {
+					app_name = g_strdup(g_app_info_get_name(test_list->data));
+					if (g_strcmp0(favorite_test_list->data, g_strdup(app_name)) == 0) {
+						app_list = g_list_prepend(app_list, g_app_info_dup(test_list->data));
+						app_count++;
+					}
+				}
 			}
-		}
+		}*/
 	}
 
 	g_list_free(all_app_list);
+	//g_free(app_name);
 }
 
 static gint lapps_pages() {
@@ -329,6 +327,10 @@ static void lapps_clear() {
 
 static void lapps_show_page(gboolean up) {
 	GList *test_list = NULL;
+	GtkWidget *frame = gtk_frame_new(NULL);
+	gtk_frame_set_shadow_type (GTK_FRAME(frame), GTK_SHADOW_OUT);
+	gtk_widget_show(frame);
+
 	int i = 0;
 
 	if (filtered) {
@@ -340,7 +342,13 @@ static void lapps_show_page(gboolean up) {
 		page_count++;
 		table = lapps_create_table();
 		table_list = g_list_append(table_list, table);
-		gtk_fixed_put(GTK_FIXED(fixed_layout), table, 250, 220);
+
+		if (g_list_length(favorite_list) == 0)
+			gtk_fixed_put(GTK_FIXED(fixed_layout), table, 250, 220);
+		else{
+			gtk_fixed_put(GTK_FIXED(fixed_layout), table, 400, 220);
+			gtk_fixed_put(GTK_FIXED(fixed_layout), frame, 100, 220);
+		}
 	}
 
 	for (test_list = table_list; test_list != NULL; test_list = test_list->next) {
@@ -472,6 +480,7 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 	indicator_rw = NULL;
 	indicator_fw = NULL;
 	table = NULL;
+	favorite_table = NULL;
 	app_list = NULL;
 	table_list = NULL;
 
@@ -585,7 +594,7 @@ static gboolean lapps_apply_configuration(gpointer user_data) {
 	gchar *confdir = NULL;
 	gboolean blurred;
 
-	confdir = g_strdup(g_strconcat(g_strdup(fm_get_home_dir()), "/.config/launchapps/", NULL));
+	confdir = g_strdup(g_strconcat(g_strdup(fm_get_home_dir()), CONFPATH, NULL));
 	if (!g_file_test(confdir, G_FILE_TEST_EXISTS & G_FILE_TEST_IS_DIR)) {
 		g_mkdir(confdir, 0700);
 	}
@@ -610,7 +619,7 @@ static void lapps_configuration(gpointer user_data) {
 	LaunchAppsPlugin *lapps = lxpanel_plugin_get_data(p);
 
 	if (lapps->image != NULL)
-		lapps->bg_image = g_strconcat(g_strdup(fm_get_home_dir()), "/.config/launchapps/", BG, NULL);
+		lapps->bg_image = g_strconcat(g_strdup(fm_get_home_dir()), CONFPATH, BG, NULL);
 }
 
 /* Callback when the configuration dialog is to be shown. */
