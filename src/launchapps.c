@@ -155,11 +155,6 @@ static void lapps_exec(GtkWidget *widget, GdkEventButton *event, gpointer user_d
 		recent_list = g_list_prepend(recent_list, app);
 		lapps_loadsave_recent(FALSE);
 	} else {
-		if (g_list_length(recent_list) > 5) {
-			GList *last = g_list_last(recent_list);
-			recent_list = g_list_remove_link(recent_list, last);
-			g_list_free(last);
-		}
 		for (test_list = recent_list; test_list != NULL; test_list = test_list->next) {
 			if (g_strcmp0(g_app_info_get_name(test_list->data), g_app_info_get_name(app)) == 0) {
 				exists = 1;
@@ -167,6 +162,11 @@ static void lapps_exec(GtkWidget *widget, GdkEventButton *event, gpointer user_d
 			}
 		}
 		if (exists == 0) {
+			if (g_list_length(recent_list) > 5) {
+				GList *last = g_list_last(recent_list);
+				recent_list = g_list_remove_link(recent_list, last);
+				g_list_free(last);
+			}
 			recent_list = g_list_prepend(recent_list, app);
 			lapps_loadsave_recent(FALSE);
 		}
