@@ -27,6 +27,8 @@
 #include <sys/types.h>
 #include <pwd.h>
 
+#include <syslog.h>
+
 #include <gdk/gdkkeysyms.h>
 
 #include <libfm/fm-gtk.h>
@@ -42,6 +44,7 @@
 #define BG "bglaunchapps.jpg"
 #define IMAGEPATH "/usr/share/lxpanel/images/"
 #define CONFPATH "/.config/launchapps/"
+#define CONFFILE "launchapps.recent"
 #define DEFAULTBG "launchapps-bg-default.jpg"
 #define DEFAULTFONTSIZE 16
 #define INDICATORFONTSIZE 32
@@ -61,6 +64,7 @@ GtkWidget *indicator_rw;
 GtkWidget *fixed_layout;
 GList *app_list;
 GList *recent_list;
+GList *recent_tmp;
 GList *table_list;
 gboolean running;
 gboolean filtered;
@@ -100,13 +104,57 @@ static void lapps_item_clicked_window_close(GtkWidget *widget, GdkEventButton *e
 	running = FALSE;
 }
 
+// load recent TRUE | save recent FALSE
+static void lapps_loadsave_recent(gboolean read) {
+	GList *test_list = NULL;
+	GList *tmp = NULL;
+	FILE *conf_file;
+	char *app_name = NULL;
+	char data[100];
+	char path[100];
+	int len = 0;
+	strcpy(path, g_strdup(g_strconcat(g_strdup(fm_get_home_dir()), CONFPATH, NULL)));
+	strcat(path, CONFFILE);
+
+	if (read) {
+		conf_file = fopen(path, "r");
+		if (conf_file == NULL) {
+			openlog("LaunchApps", LOG_PID | LOG_CONS, LOG_USER);
+			syslog(LOG_INFO, "Recent Applications: Conf File Read Error");
+			closelog();
+		} else {
+			while (fgets(data, 100, conf_file) != NULL) {
+				len = strlen(data);
+				if (data[len - 1] == '\n')
+					data[len - 1] = '\0';
+				recent_tmp = g_list_append(recent_tmp, g_strdup(data));
+			}
+			fclose(conf_file);
+		}
+	} else {
+		conf_file = fopen(path, "w");
+		if (conf_file == NULL) {
+			openlog("LaunchApps", LOG_PID | LOG_CONS, LOG_USER);
+			syslog(LOG_INFO, "Recent Applications: Conf File Write Error");
+			closelog();
+		} else {
+			for (test_list = recent_list; test_list != NULL; test_list = test_list->next) {
+				app_name = strcat(g_strdup(g_app_info_get_name(test_list->data)), "\n");
+				fputs(app_name, conf_file);
+			}
+			fclose(conf_file);
+		}
+	}
+}
+
 static void lapps_exec(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
 	GAppInfo *app = g_app_info_dup((GAppInfo *) user_data);
 	GList *test_list = NULL;
 	int exists = 0;
-	if (g_list_length(recent_list) == 0)
+	if (g_list_length(recent_list) == 0) {
 		recent_list = g_list_prepend(recent_list, app);
-	else {
+		lapps_loadsave_recent(FALSE);
+	} else {
 		if (g_list_length(recent_list) > 5) {
 			GList *last = g_list_last(recent_list);
 			recent_list = g_list_remove_link(recent_list, last);
@@ -118,8 +166,10 @@ static void lapps_exec(GtkWidget *widget, GdkEventButton *event, gpointer user_d
 				break;
 			}
 		}
-		if (exists == 0)
+		if (exists == 0) {
 			recent_list = g_list_prepend(recent_list, app);
+			lapps_loadsave_recent(FALSE);
+		}
 	}
 	g_app_info_launch(app, NULL, NULL, NULL);
 }
@@ -571,13 +621,30 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 
 	gtk_container_add(GTK_CONTAINER(layout), fixed_layout);
 
-	lapps_show_page(TRUE);
-
-	// recent applications
+	// recent applications *********************************************************
+	if (g_list_length(recent_tmp) > 0) {
+		GList *test_list = NULL;
+		GList *test_recent_list = NULL;
+		gchar *app_name = NULL;
+		for (test_recent_list = recent_tmp; test_recent_list != NULL; test_recent_list = test_recent_list->next) {
+			for (test_list = app_list; test_list != NULL; test_list = test_list->next) {
+				app_name = g_strdup(g_app_info_get_name(test_list->data));
+				if (g_strcmp0(app_name, test_recent_list->data) == 0) {
+					recent_list = g_list_append(recent_list, g_app_info_dup(test_list->data));
+					break;
+				}
+			}
+		}
+		g_free(app_name);
+	}
+	recent_tmp = NULL;
 	recent_frame = lapps_create_recent_frame();
 	if (g_list_length(recent_list) > 0)
 		gtk_fixed_put(GTK_FIXED(fixed_layout), recent_frame, 80, 80);
 	gtk_widget_show_all(recent_frame);
+	/* ****************************************************************************/
+
+	lapps_show_page(TRUE);
 
 	indicator = gtk_image_new();
 	gtk_widget_set_size_request(indicator, INDICATORWIDTH, INDICATORHEIGHT);
@@ -730,6 +797,8 @@ static GtkWidget *lapps_constructor(LXPanel *panel, config_setting_t *settings) 
 	running = FALSE;
 
 	recent_list = NULL;
+
+	lapps_loadsave_recent(TRUE);
 
 	return p;
 }
