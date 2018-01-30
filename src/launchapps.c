@@ -38,6 +38,7 @@
 #include <lxpanel/plugin.h>
 
 #define LAPPSICON "system-run"
+#define LAPPSNAME "LaunchApps"
 #define BG "bglaunchapps.jpg"
 #define IMAGEPATH "/usr/share/lxpanel/images/"
 #define CONFPATH "/.config/launchapps/"
@@ -53,13 +54,13 @@ typedef enum {
 
 GtkWidget *window;
 GtkWidget *table;
-GtkWidget *favorite_table;
+GtkWidget *recent_frame;
 GtkWidget *indicator;
 GtkWidget *indicator_fw;
 GtkWidget *indicator_rw;
 GtkWidget *fixed_layout;
 GList *app_list;
-GList *favorite_list;
+GList *recent_list;
 GList *table_list;
 gboolean running;
 gboolean filtered;
@@ -101,10 +102,25 @@ static void lapps_item_clicked_window_close(GtkWidget *widget, GdkEventButton *e
 
 static void lapps_exec(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
 	GAppInfo *app = g_app_info_dup((GAppInfo *) user_data);
-	gchar *app_name = g_strdup(g_app_info_get_name(app));
-	if(g_list_find(favorite_list, app_name) == NULL)
-		favorite_list = g_list_prepend(favorite_list, g_strdup(app_name));
-	g_free(app_name);
+	GList *test_list = NULL;
+	int exists = 0;
+	if (g_list_length(recent_list) == 0)
+		recent_list = g_list_prepend(recent_list, app);
+	else {
+		if (g_list_length(recent_list) > 5) {
+			GList *last = g_list_last(recent_list);
+			recent_list = g_list_remove_link(recent_list, last);
+			g_list_free(last);
+		}
+		for (test_list = recent_list; test_list != NULL; test_list = test_list->next) {
+			if (g_strcmp0(g_app_info_get_name(test_list->data), g_app_info_get_name(app)) == 0) {
+				exists = 1;
+				break;
+			}
+		}
+		if (exists == 0)
+			recent_list = g_list_prepend(recent_list, app);
+	}
 	g_app_info_launch(app, NULL, NULL, NULL);
 }
 
@@ -177,11 +193,60 @@ static GtkWidget *lapps_create_table() {
 	return this_table;
 }
 
+static GtkWidget *lapps_create_recent_frame() {
+	GtkWidget *app_box = NULL;
+	GtkWidget *event_box = NULL;
+	GtkWidget *app_label = NULL;
+	GtkWidget *main_vbox = NULL;
+	GList *test_list = NULL;
+	GdkPixbuf *icon_pix = NULL;
+	GdkPixbuf *target_icon_pix = NULL;
+	gchar *app_name = NULL;
+
+	recent_frame = gtk_frame_new(NULL);
+	gtk_frame_set_shadow_type(GTK_FRAME(recent_frame), GTK_SHADOW_IN);
+
+	main_vbox = gtk_vbox_new(TRUE, 1);
+	GtkWidget *label = gtk_label_new(NULL);
+	const char *str = "Recent Applications";
+	const char *format = "<span foreground=\"white\" size=\"medium\"><b>\%s</b></span>";
+	char *markup;
+	markup = g_markup_printf_escaped(format, str);
+	gtk_label_set_markup(GTK_LABEL(label), markup);
+	g_free(markup);
+	gtk_box_pack_start(GTK_BOX(main_vbox), label, FALSE, FALSE, 0);
+
+	for (test_list = recent_list; test_list != NULL; test_list = test_list->next) {
+		app_name = g_strdup(g_app_info_get_name(test_list->data));
+		icon_pix = shadow_icon(lapps_application_icon(test_list->data));
+		target_icon_pix = gdk_pixbuf_scale_simple(icon_pix, icon_size, icon_size, GDK_INTERP_BILINEAR);
+		app_box = gtk_vbox_new(TRUE, 1);
+		event_box = gtk_event_box_new();
+		gtk_event_box_set_visible_window(GTK_EVENT_BOX(event_box), FALSE);
+		gtk_container_add(GTK_CONTAINER(event_box), app_box);
+		g_signal_connect(G_OBJECT(event_box), "button-press-event", G_CALLBACK(lapps_exec),
+				(gpointer )g_app_info_dup(test_list->data));
+		g_signal_connect(G_OBJECT(event_box), "button-release-event", G_CALLBACK(lapps_item_clicked_window_close),
+				NULL);
+		gtk_box_pack_start(GTK_BOX(app_box), gtk_image_new_from_pixbuf(target_icon_pix), FALSE, FALSE, 0);
+		app_label = gtk_image_new_from_pixbuf(create_app_name(app_name, DEFAULTFONTSIZE));
+		gtk_widget_set_size_request(app_label, 250, 50);
+		gtk_box_pack_start(GTK_BOX(app_box), app_label, FALSE, FALSE, 0);
+		gtk_box_pack_start(GTK_BOX(main_vbox), event_box, TRUE, TRUE, 0);
+		g_object_unref(icon_pix);
+		g_object_unref(target_icon_pix);
+	}
+
+	gtk_container_add(GTK_CONTAINER(recent_frame), main_vbox);
+
+	g_free(app_name);
+
+	return recent_frame;
+}
+
 static void lapps_app_list(gchar *filter) {
 	GList *test_list = NULL;
 	GList *all_app_list = NULL;
-	// GList *favorite_test_list = NULL;
-	//gchar *app_name = NULL;
 
 	all_app_list = g_app_info_get_all();
 
@@ -207,31 +272,14 @@ static void lapps_app_list(gchar *filter) {
 		for (test_list = all_app_list; test_list != NULL; test_list = test_list->next) {
 			if ((g_app_info_get_icon(test_list->data) != NULL) && (g_app_info_get_description(test_list->data) != NULL)
 					&& g_app_info_should_show(test_list->data)) {
-				//app_name = g_strdup(g_app_info_get_name(test_list->data));
 				app_list = g_list_insert_sorted(app_list, g_app_info_dup(test_list->data),
 						(GCompareFunc) app_name_comparator);
 				app_count++;
 			}
 		}
-
-		/*for (favorite_test_list = favorite_list; favorite_test_list != NULL;
-				favorite_test_list = favorite_test_list->next) {
-			for (test_list = all_app_list; test_list != NULL; test_list = test_list->next) {
-				if ((g_app_info_get_icon(test_list->data) != NULL)
-						&& (g_app_info_get_description(test_list->data) != NULL)
-						&& g_app_info_should_show(test_list->data)) {
-					app_name = g_strdup(g_app_info_get_name(test_list->data));
-					if (g_strcmp0(favorite_test_list->data, g_strdup(app_name)) == 0) {
-						app_list = g_list_prepend(app_list, g_app_info_dup(test_list->data));
-						app_count++;
-					}
-				}
-			}
-		}*/
 	}
 
 	g_list_free(all_app_list);
-	//g_free(app_name);
 }
 
 static gint lapps_pages() {
@@ -328,22 +376,6 @@ static void lapps_clear() {
 static void lapps_show_page(gboolean up) {
 	GList *test_list = NULL;
 
-	// teste frame ***********************
-	GtkWidget *frame = gtk_frame_new(NULL);
-	gtk_frame_set_shadow_type (GTK_FRAME(frame), GTK_SHADOW_OUT);
-	gtk_widget_show(frame);
-	GtkWidget *label = gtk_label_new (NULL);
-	const char *str = "Recent Applications";
-	const char *format = "<span foreground=\"white\" size=\"medium\"><b>\%s</b></span>";
-	char *markup;
-	markup = g_markup_printf_escaped (format, str);
-	gtk_label_set_markup (GTK_LABEL (label), markup);
-	g_free (markup);
-	gtk_container_add(GTK_CONTAINER(frame), label);
-	gtk_widget_show(label);
-
-	//************************************
-
 	int i = 0;
 
 	if (filtered) {
@@ -356,12 +388,10 @@ static void lapps_show_page(gboolean up) {
 		table = lapps_create_table();
 		table_list = g_list_append(table_list, table);
 
-		if (g_list_length(favorite_list) == 0)
+		if (g_list_length(recent_list) == 0)
 			gtk_fixed_put(GTK_FIXED(fixed_layout), table, 250, 220);
-		else{
-			gtk_fixed_put(GTK_FIXED(fixed_layout), table, 400, 220);
-			gtk_fixed_put(GTK_FIXED(fixed_layout), frame, 100, 220);
-		}
+		else
+			gtk_fixed_put(GTK_FIXED(fixed_layout), table, 420, 220);
 	}
 
 	for (test_list = table_list; test_list != NULL; test_list = test_list->next) {
@@ -493,7 +523,7 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 	indicator_rw = NULL;
 	indicator_fw = NULL;
 	table = NULL;
-	favorite_table = NULL;
+	recent_frame = NULL;
 	app_list = NULL;
 	table_list = NULL;
 
@@ -502,7 +532,7 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 	gtk_window_fullscreen(GTK_WINDOW(window));
 	gtk_window_stick(GTK_WINDOW(window));
 	gtk_window_set_keep_above(GTK_WINDOW(window), TRUE);
-	gtk_window_set_title(GTK_WINDOW(window), "Launch Apps");
+	gtk_window_set_title(GTK_WINDOW(window), LAPPSNAME);
 	gtk_widget_set_app_paintable(window, TRUE);
 	gtk_window_set_decorated(GTK_WINDOW(window), FALSE);
 	gtk_window_set_icon_name(GTK_WINDOW(window), LAPPSICON);
@@ -542,6 +572,12 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 	gtk_container_add(GTK_CONTAINER(layout), fixed_layout);
 
 	lapps_show_page(TRUE);
+
+	// recent applications
+	recent_frame = lapps_create_recent_frame();
+	if (g_list_length(recent_list) > 0)
+		gtk_fixed_put(GTK_FIXED(fixed_layout), recent_frame, 80, 80);
+	gtk_widget_show_all(recent_frame);
 
 	indicator = gtk_image_new();
 	gtk_widget_set_size_request(indicator, INDICATORWIDTH, INDICATORHEIGHT);
@@ -678,7 +714,7 @@ static GtkWidget *lapps_constructor(LXPanel *panel, config_setting_t *settings) 
 	gtk_widget_show(icon_box);
 
 	lapps->icon_image = gtk_image_new_from_icon_name(LAPPSICON, lapps->panel->priv->icon_size);
-	gtk_widget_set_tooltip_text(lapps->icon_image, "LaunchApps");
+	gtk_widget_set_tooltip_text(lapps->icon_image, LAPPSNAME);
 
 	g_signal_connect(icon_box, "button_release_event", G_CALLBACK(lapps_button_clicked), (gpointer ) lapps);
 
@@ -693,7 +729,7 @@ static GtkWidget *lapps_constructor(LXPanel *panel, config_setting_t *settings) 
 
 	running = FALSE;
 
-	favorite_list = NULL;
+	recent_list = NULL;
 
 	return p;
 }
