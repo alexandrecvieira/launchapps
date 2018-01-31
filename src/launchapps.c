@@ -166,24 +166,25 @@ static void lapps_exec(GtkWidget *widget, GdkEventButton *event, gpointer user_d
 		}
 
 		// recent_list contains item
-		if (exists == 1) {
-			if (g_list_length(recent_list) > 5) {
-				GList *item = g_list_nth(recent_list, item_position);
-				recent_list = g_list_remove_link(recent_list, item);
-				g_list_free(item);
-			}
+		if (exists == 1){
+			GList *item = g_list_nth(recent_list, item_position);
+			recent_list = g_list_remove_link(recent_list, item);
+			g_list_free(item);
 			recent_list = g_list_prepend(recent_list, app);
 			lapps_loadsave_recent(FALSE);
 		}
 
 		// recent_list does not contain item
 		if (exists == 0) {
-			if (g_list_length(recent_list) > 5) {
-				GList *item = g_list_last(recent_list);
-				recent_list = g_list_remove_link(recent_list, item);
-				g_list_free(item);
-			}
 			recent_list = g_list_prepend(recent_list, app);
+			lapps_loadsave_recent(FALSE);
+		}
+
+		// remove last item (max 6 items)
+		if (g_list_length(recent_list) > 6) {
+			GList *item = g_list_last(recent_list);
+			recent_list = g_list_remove_link(recent_list, item);
+			g_list_free(item);
 			lapps_loadsave_recent(FALSE);
 		}
 	}
