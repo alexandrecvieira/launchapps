@@ -325,8 +325,9 @@ static void lapps_app_list(gchar *filter) {
 			if ((g_app_info_get_icon(test_list->data) != NULL) && (g_app_info_get_description(test_list->data) != NULL)
 					&& g_app_info_should_show(test_list->data)) {
 				gchar *name = g_str_to_ascii(g_ascii_strdown(g_app_info_get_name(test_list->data), -1), NULL);
-				gchar *desc = g_str_to_ascii(g_ascii_strdown(g_app_info_get_description(test_list->data), -1), NULL);
-				if (g_strrstr(name, filter) || g_strrstr(desc, filter)) {
+				gchar *description = g_str_to_ascii(g_ascii_strdown(g_app_info_get_description(test_list->data), -1), NULL);
+				gchar *id = g_str_to_ascii(g_ascii_strdown(g_app_info_get_id(test_list->data), -1), NULL);
+				if (g_strrstr(name, filter) || g_strrstr(description, filter) || g_strrstr(id, filter)) {
 					app_list = g_list_insert_sorted(app_list, g_app_info_dup(test_list->data),
 							(GCompareFunc) app_name_comparator);
 					app_count++;

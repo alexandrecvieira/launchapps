@@ -15,7 +15,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.])
 
 AC_PREREQ(2.59)
-AC_INIT([launchapps], [1.1.3], [acamargo.vieira@gmail.com])
+AC_INIT([launchapps], [1.1.2], [acamargo.vieira@gmail.com])
 AC_PROG_CC
 AC_PROG_CXX
 
