@@ -1,4 +1,8 @@
 
+2018-01-31  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* launchapps.c (lapps_exec): Dynamic positioning of recent applications
+
 2018-01-30  Alexandre C Vieira <acamargo.vieira@gmail.com>
 
 	* Release 1.1.2: Added functionality Recent Applications

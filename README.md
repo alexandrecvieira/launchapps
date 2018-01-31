@@ -41,8 +41,6 @@ Para atualizar o LXPanel para a versão 0.9.3 no **Debian Jessie** faça a insta
 
 ![lxpanel-add-tr](https://user-images.githubusercontent.com/20074560/32780937-3afa54a8-c92a-11e7-83fa-b36363e02723.png)
 
-##### LaunchApps
-
 **Teclas de atalho:**
 
 * Esc &rArr; Fecha
@@ -69,7 +67,7 @@ Para atualizar o LXPanel para a versão 0.9.3 no **Debian Jessie** faça a insta
  
 ![launchapps](https://user-images.githubusercontent.com/20074560/32780952-463bb7bc-c92a-11e7-9013-ddd843ed0ac4.gif)
 
-**LaunchApps 1.1.2**
+**LaunchApps 1.1.2 e 1.1.3**
 
 ![launchappd-1 1 2](https://user-images.githubusercontent.com/20074560/35598237-4f371a8e-0609-11e8-9fe2-fc5f4b960928.png)
 
