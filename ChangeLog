@@ -1,4 +1,19 @@
 
+2018-01-30  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* Release 1.1.2: Added functionality Recent Applications
+	* Feature Recent Applications completada
+	* Feature Recent Applications implementada
+
+2018-01-29  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* Teste frame label estilizado
+	* Teste frame para apps favoritas
+
+2018-01-28  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* Iniciando implementação da Feature Apps Favoritas
+
 2018-01-27  Alexandre C Vieira <acamargo.vieira@gmail.com>
 
 	* Alterado ícone para "system-run" e adicionada tip "LaunchApps"

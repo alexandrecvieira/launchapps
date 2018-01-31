@@ -64,8 +64,14 @@ Para atualizar o LXPanel para a versão 0.9.3 no **Debian Jessie** faça a insta
 * ![lupa](https://user-images.githubusercontent.com/20074560/32782302-1cb73ca4-c92f-11e7-9e7f-e72230a0b06d.png) &rArr; Executa a busca
 
 * ![clear](https://user-images.githubusercontent.com/20074560/32782376-58e7315c-c92f-11e7-8530-20f1c9efb382.png) &rArr; limpa o campo de busca e volta para o ínicio
+
+**LaunchApps 1.0.2**
  
 ![launchapps](https://user-images.githubusercontent.com/20074560/32780952-463bb7bc-c92a-11e7-9013-ddd843ed0ac4.gif)
+
+**LaunchApps 1.1.2**
+
+![launchappd-1 1 2](https://user-images.githubusercontent.com/20074560/35598237-4f371a8e-0609-11e8-9fe2-fc5f4b960928.png)
 
 #### Testado no LXPanel versão 0.9.3
 
@@ -77,11 +83,15 @@ Para atualizar o LXPanel para a versão 0.9.3 no **Debian Jessie** faça a insta
 
 ### [Unreleased]
 
+### [1.1.2] - 2018-01-30
+####Added
+- Functionality Recent Applications
+
 ### [1.0.2] - 2018-01-27
-### Fixed
+#### Fixed
 - Alterado ícone para "system-run"
 
-### Added
+#### Added
 - Tip "LaunchApps"
 
 ### [1.0.1] - 2017-11-16
