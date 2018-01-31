@@ -636,6 +636,26 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 
 	lapps_app_list(NULL);
 
+	// completion ******************************************************************
+	GtkEntryCompletion *completion = gtk_entry_completion_new();
+	gtk_entry_completion_set_minimum_key_length(completion, 2);
+	gtk_entry_completion_set_popup_set_width(completion, FALSE);
+	GtkListStore *store = gtk_list_store_new(1, G_TYPE_STRING);
+	GList *test_list = NULL;
+	for (test_list = app_list; test_list != NULL; test_list = test_list->next) {
+		GtkTreeIter it;
+		gtk_list_store_append(store, &it);
+		gtk_list_store_set(store, &it, 0, g_strdup(g_app_info_get_name(test_list->data)), -1);
+	}
+	gtk_entry_completion_set_model(completion, (GtkTreeModel*) store);
+	g_object_unref(store);
+	gtk_entry_completion_set_text_column(completion, 0);
+	gtk_entry_set_completion(GTK_ENTRY(entry), completion);
+	gtk_entry_completion_complete(completion);
+	g_object_unref(completion);
+	g_list_free(test_list);
+	/* ****************************************************************************/
+
 	gtk_container_add(GTK_CONTAINER(layout), fixed_layout);
 
 	// recent applications *********************************************************
@@ -653,6 +673,7 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 			}
 		}
 		g_free(app_name);
+		g_list_free(test_recent_list);
 	}
 	recent_tmp = NULL;
 	recent_frame = lapps_create_recent_frame();
