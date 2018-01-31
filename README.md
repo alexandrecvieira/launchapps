@@ -84,7 +84,7 @@ Para atualizar o LXPanel para a versão 0.9.3 no **Debian Jessie** faça a insta
 ### [Unreleased]
 
 ### [1.1.2] - 2018-01-30
-####Added
+#### Added
 - Functionality Recent Applications
 
 ### [1.0.2] - 2018-01-27
