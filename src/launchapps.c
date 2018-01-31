@@ -151,21 +151,37 @@ static void lapps_exec(GtkWidget *widget, GdkEventButton *event, gpointer user_d
 	GAppInfo *app = g_app_info_dup((GAppInfo *) user_data);
 	GList *test_list = NULL;
 	int exists = 0;
+	int item_position;
+
 	if (g_list_length(recent_list) == 0) {
 		recent_list = g_list_prepend(recent_list, app);
 		lapps_loadsave_recent(FALSE);
 	} else {
 		for (test_list = recent_list; test_list != NULL; test_list = test_list->next) {
 			if (g_strcmp0(g_app_info_get_name(test_list->data), g_app_info_get_name(app)) == 0) {
+				item_position = g_list_position(recent_list, test_list);
 				exists = 1;
 				break;
 			}
 		}
+
+		// recent_list contains item
+		if (exists == 1) {
+			if (g_list_length(recent_list) > 5) {
+				GList *item = g_list_nth(recent_list, item_position);
+				recent_list = g_list_remove_link(recent_list, item);
+				g_list_free(item);
+			}
+			recent_list = g_list_prepend(recent_list, app);
+			lapps_loadsave_recent(FALSE);
+		}
+
+		// recent_list does not contain item
 		if (exists == 0) {
 			if (g_list_length(recent_list) > 5) {
-				GList *last = g_list_last(recent_list);
-				recent_list = g_list_remove_link(recent_list, last);
-				g_list_free(last);
+				GList *item = g_list_last(recent_list);
+				recent_list = g_list_remove_link(recent_list, item);
+				g_list_free(item);
 			}
 			recent_list = g_list_prepend(recent_list, app);
 			lapps_loadsave_recent(FALSE);
