@@ -1,6 +1,7 @@
 
 2018-01-31  Alexandre C Vieira <acamargo.vieira@gmail.com>
 
+	* launchapps.c (lapps_match_completion): Added function to improve completion functionality
 	* launchapps.c (lapps_app_list): Fixed: including searching for id(exec name)
 	* Deleted tags: 1.1.2, 1.1.3 Added: Entry Completion
 	* launchapps.c (lapps_exec): Fix Dynamic positioning of recent applications bug
