@@ -457,9 +457,9 @@ static void lapps_show_page(gboolean up) {
 		table_list = g_list_append(table_list, table);
 
 		if (g_list_length(recent_list) == 0)
-			gtk_fixed_put(GTK_FIXED(fixed_layout), table, 250, 220);
+		gtk_fixed_put(GTK_FIXED(fixed_layout), table, (s_width / 8) + 15, (s_height / 5) + 10);
 		else
-			gtk_fixed_put(GTK_FIXED(fixed_layout), table, 420, 220);
+		gtk_fixed_put(GTK_FIXED(fixed_layout), table, (s_width / 4) - 50, (s_height / 5) + 10);
 	}
 
 	for (test_list = table_list; test_list != NULL; test_list = test_list->next) {
@@ -699,15 +699,17 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 	recent_tmp = NULL;
 	recent_frame = lapps_create_recent_frame();
 	if (g_list_length(recent_list) > 0)
-		gtk_fixed_put(GTK_FIXED(fixed_layout), recent_frame, 80, 80);
+		gtk_fixed_put(GTK_FIXED(fixed_layout), recent_frame, s_width / 20, (s_height / 12) - 5);
 	gtk_widget_show_all(recent_frame);
 	/* ****************************************************************************/
 
 	lapps_show_page(TRUE);
 
+	int indicator_ypos = s_height - (INDICATORHEIGHT + 20);
+
 	indicator = gtk_image_new();
 	gtk_widget_set_size_request(indicator, INDICATORWIDTH, INDICATORHEIGHT);
-	gtk_fixed_put(GTK_FIXED(fixed_layout), indicator, (s_width / 2) - (INDICATORWIDTH / 2), 1015);
+	gtk_fixed_put(GTK_FIXED(fixed_layout), indicator, (s_width / 2) - (INDICATORWIDTH / 2), indicator_ypos);
 	gtk_widget_show(indicator);
 
 	indicator_rw = gtk_image_new();
@@ -715,7 +717,7 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 	indicator_event_box = gtk_event_box_new();
 	gtk_container_add(GTK_CONTAINER(indicator_event_box), GTK_WIDGET(indicator_rw));
 	gtk_event_box_set_visible_window(GTK_EVENT_BOX(indicator_event_box), FALSE);
-	gtk_fixed_put(GTK_FIXED(fixed_layout), indicator_event_box, (s_width / 2) - (INDICATORWIDTH * 2), 1015);
+	gtk_fixed_put(GTK_FIXED(fixed_layout), indicator_event_box, (s_width / 2) - (INDICATORWIDTH * 2), indicator_ypos);
 	g_signal_connect(G_OBJECT(indicator_event_box), "button-press-event", G_CALLBACK(lapps_indicator_rw_clicked), NULL);
 	g_signal_connect(G_OBJECT(indicator_event_box), "enter-notify-event", G_CALLBACK(lapps_indicator_rw_hover), NULL);
 	g_signal_connect(G_OBJECT(indicator_event_box), "leave-notify-event", G_CALLBACK(lapps_indicator_rw_hover), NULL);
@@ -727,7 +729,7 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 	indicator_event_box = gtk_event_box_new();
 	gtk_container_add(GTK_CONTAINER(indicator_event_box), GTK_WIDGET(indicator_fw));
 	gtk_event_box_set_visible_window(GTK_EVENT_BOX(indicator_event_box), FALSE);
-	gtk_fixed_put(GTK_FIXED(fixed_layout), indicator_event_box, (s_width / 2) + INDICATORWIDTH, 1015);
+	gtk_fixed_put(GTK_FIXED(fixed_layout), indicator_event_box, (s_width / 2) + INDICATORWIDTH, indicator_ypos);
 	g_signal_connect(G_OBJECT(indicator_event_box), "button-press-event", G_CALLBACK(lapps_indicator_fw_clicked), NULL);
 	g_signal_connect(G_OBJECT(indicator_event_box), "enter-notify-event", G_CALLBACK(lapps_indicator_fw_hover), NULL);
 	g_signal_connect(G_OBJECT(indicator_event_box), "leave-notify-event", G_CALLBACK(lapps_indicator_fw_hover), NULL);
