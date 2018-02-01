@@ -579,6 +579,23 @@ static void lapps_search_(GtkEntry *entry, gpointer userdata) {
 	}
 }
 
+static gboolean lapps_match_completion(GtkEntryCompletion *completion, const gchar *key, GtkTreeIter *iter,
+		gpointer user_data) {
+	GtkTreeModel *model = gtk_entry_completion_get_model(completion);
+	gchar *name;
+	gchar *description;
+	gchar *id;
+	gtk_tree_model_get(model, iter, 0, &name, 1, &description, 2, &id, -1);
+	gchar *tofind = g_str_to_ascii(g_ascii_strdown(key, -1), NULL);
+	gboolean match = (g_strrstr(g_str_to_ascii(g_ascii_strdown(name, -1), NULL), tofind) == NULL ? FALSE : TRUE)
+			|| (g_strrstr(g_str_to_ascii(g_ascii_strdown(description, -1), NULL), key) == NULL ? FALSE : TRUE)
+			|| (g_strrstr(g_str_to_ascii(g_ascii_strdown(id, -1), NULL), key) == NULL ? FALSE : TRUE);
+	g_free(name);
+	g_free(description);
+	g_free(id);
+	return match;
+}
+
 static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 	GtkWidget *layout = NULL;
 	GtkWidget *bg_image = NULL;
@@ -641,14 +658,17 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 	GtkEntryCompletion *completion = gtk_entry_completion_new();
 	gtk_entry_completion_set_minimum_key_length(completion, 2);
 	gtk_entry_completion_set_popup_set_width(completion, FALSE);
-	GtkListStore *store = gtk_list_store_new(1, G_TYPE_STRING);
+	GtkListStore *store = gtk_list_store_new(3, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING);
 	GList *test_list = NULL;
 	for (test_list = app_list; test_list != NULL; test_list = test_list->next) {
 		GtkTreeIter it;
 		gtk_list_store_append(store, &it);
-		gtk_list_store_set(store, &it, 0, g_strdup(g_app_info_get_name(test_list->data)), -1);
+		gtk_list_store_set(store, &it, 0, g_strdup(g_app_info_get_name(test_list->data)), 1,
+				g_strdup(g_app_info_get_description(test_list->data)), 2, g_strdup(g_app_info_get_id(test_list->data)),
+				-1);
 	}
 	gtk_entry_completion_set_model(completion, (GtkTreeModel*) store);
+	gtk_entry_completion_set_match_func(completion, (GtkEntryCompletionMatchFunc) lapps_match_completion, NULL, NULL);
 	g_object_unref(store);
 	gtk_entry_completion_set_text_column(completion, 0);
 	gtk_entry_set_completion(GTK_ENTRY(entry), completion);
