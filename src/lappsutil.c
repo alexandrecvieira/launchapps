@@ -216,13 +216,17 @@ void set_icons_size() {
 	syslog(LOG_INFO, "Icon Size: %f", suggested_size);
 	closelog();
 
-	if (suggested_size < 27) {
+	// common screen size resolution = suggested_size
+	// 1024x768=57 | 1280x800=62 | 1280x1024=68 | 1366x768=63
+	// 1440x900=68 | 1600x900=70 | 1680x1050=75 | 1920x1080=79
+
+	if (suggested_size < 62) {
 		icon_size = 24;
-	} else if (suggested_size >= 27 && suggested_size < 40) {
+	} else if (suggested_size >= 62 && suggested_size < 68) {
 		icon_size = 32;
-	} else if (suggested_size >= 40 && suggested_size < 56) {
+	} else if (suggested_size >= 68 && suggested_size < 79) {
 		icon_size = 48;
-	} else if (suggested_size >= 56) {
+	} else if (suggested_size >= 79) {
 		icon_size = 64;
 	}
 
