@@ -1,4 +1,8 @@
 
+2018-02-01  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* Iniciando resolução de problemas com telas diferentes de 1920x1080
+
 2018-01-31  Alexandre C Vieira <acamargo.vieira@gmail.com>
 
 	* launchapps.c (lapps_match_completion): Added function to improve completion functionality

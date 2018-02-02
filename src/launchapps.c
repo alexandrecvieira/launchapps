@@ -596,6 +596,13 @@ static gboolean lapps_match_completion(GtkEntryCompletion *completion, const gch
 	return match;
 }
 
+static gboolean lapps_match_completion_selected(GtkEntryCompletion *widget, GtkTreeModel *model, GtkTreeIter *iter,
+		gpointer user_data) {
+	GtkEntry *entry = (GtkEntry *) user_data;
+	lapps_search_(entry, NULL);
+	return FALSE;
+}
+
 static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 	GtkWidget *layout = NULL;
 	GtkWidget *bg_image = NULL;
@@ -669,6 +676,7 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 	}
 	gtk_entry_completion_set_model(completion, (GtkTreeModel*) store);
 	gtk_entry_completion_set_match_func(completion, (GtkEntryCompletionMatchFunc) lapps_match_completion, NULL, NULL);
+	g_signal_connect(GTK_OBJECT(completion), "match-selected", G_CALLBACK(lapps_match_completion_selected), (gpointer)entry);
 	g_object_unref(store);
 	gtk_entry_completion_set_text_column(completion, 0);
 	gtk_entry_set_completion(GTK_ENTRY(entry), completion);
