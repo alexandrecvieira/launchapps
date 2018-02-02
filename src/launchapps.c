@@ -44,10 +44,6 @@
 #define CONFPATH "/.config/launchapps/"
 #define CONFFILE "launchapps.recent"
 #define DEFAULTBG "launchapps-bg-default.jpg"
-// #define DEFAULTFONTSIZE 16
-// #define INDICATORFONTSIZE 32
-// #define INDICATORWIDTH 32
-// #define INDICATORHEIGHT 42 /* INDICATORWIDTH + 10 */
 
 typedef enum {
 	LA_NONE, LA_ICONIFY
@@ -55,7 +51,7 @@ typedef enum {
 
 GtkWidget *window;
 GtkWidget *table;
-GtkWidget *recent_frame;
+GtkWidget *frame;
 GtkWidget *indicator;
 GtkWidget *indicator_fw;
 GtkWidget *indicator_rw;
@@ -234,7 +230,7 @@ static GtkWidget *lapps_create_table() {
 					NULL);
 			gtk_box_pack_start(GTK_BOX(app_box), gtk_image_new_from_pixbuf(target_icon_pix), FALSE, FALSE, 0);
 			app_label = gtk_image_new_from_pixbuf(create_app_name(app_name, font_size));
-			gtk_widget_set_size_request(app_label, (s_width / 8), 50);
+			gtk_widget_set_size_request(app_label, (s_width / 8), (s_height / 22));
 			gtk_box_pack_start(GTK_BOX(app_box), app_label, FALSE, FALSE, 0);
 			gtk_table_attach(GTK_TABLE(this_table), event_box, j, j + 1, i, i + 1, GTK_SHRINK, GTK_FILL, 0, 0);
 			g_object_unref(icon_pix);
@@ -262,24 +258,16 @@ static GtkWidget *lapps_create_recent_frame() {
 	GtkWidget *app_box = NULL;
 	GtkWidget *event_box = NULL;
 	GtkWidget *app_label = NULL;
-	GtkWidget *main_vbox = NULL;
+	GtkWidget *apps_vbox = NULL;
 	GList *test_list = NULL;
 	GdkPixbuf *icon_pix = NULL;
 	GdkPixbuf *target_icon_pix = NULL;
 	gchar *app_name = NULL;
 
-	recent_frame = gtk_frame_new(NULL);
-	gtk_frame_set_shadow_type(GTK_FRAME(recent_frame), GTK_SHADOW_IN);
+	apps_vbox = gtk_vbox_new(TRUE, 1);
 
-	main_vbox = gtk_vbox_new(TRUE, 1);
-	GtkWidget *label = gtk_label_new(NULL);
-	const gchar *str = "Recent Applications";
-	const gchar *format = "<span foreground='white' size='medium'><b>\%s</b></span>";
-	gchar *markup;
-	markup = g_markup_printf_escaped(format, str);
-	gtk_label_set_markup(GTK_LABEL(label), markup);
-	g_free(markup);
-	gtk_box_pack_start(GTK_BOX(main_vbox), label, FALSE, FALSE, 0);
+	GtkWidget *recent_frame = gtk_frame_new(NULL);
+	gtk_frame_set_shadow_type(GTK_FRAME(recent_frame), GTK_SHADOW_IN);
 
 	for (test_list = recent_list; test_list != NULL; test_list = test_list->next) {
 		app_name = g_strdup(g_app_info_get_name(test_list->data));
@@ -295,14 +283,14 @@ static GtkWidget *lapps_create_recent_frame() {
 				NULL);
 		gtk_box_pack_start(GTK_BOX(app_box), gtk_image_new_from_pixbuf(target_icon_pix), FALSE, FALSE, 0);
 		app_label = gtk_image_new_from_pixbuf(create_app_name(app_name, font_size));
-		gtk_widget_set_size_request(app_label, (s_width / 8), 50);
+		gtk_widget_set_size_request(app_label, (s_width / 8), (s_height / 22));
 		gtk_box_pack_start(GTK_BOX(app_box), app_label, FALSE, FALSE, 0);
-		gtk_box_pack_start(GTK_BOX(main_vbox), event_box, TRUE, TRUE, 0);
+		gtk_box_pack_start(GTK_BOX(apps_vbox), event_box, TRUE, TRUE, 0);
 		g_object_unref(icon_pix);
 		g_object_unref(target_icon_pix);
 	}
 
-	gtk_container_add(GTK_CONTAINER(recent_frame), main_vbox);
+	gtk_container_add(GTK_CONTAINER(recent_frame), apps_vbox);
 
 	g_free(app_name);
 
@@ -613,7 +601,7 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 	indicator_rw = NULL;
 	indicator_fw = NULL;
 	table = NULL;
-	recent_frame = NULL;
+	frame = NULL;
 	app_list = NULL;
 	table_list = NULL;
 
@@ -703,10 +691,19 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 		g_list_free(test_recent_list);
 	}
 	recent_tmp = NULL;
-	recent_frame = lapps_create_recent_frame();
+	GtkWidget *recent_frame_label = gtk_label_new(NULL);
+	const gchar *str = "Recent Applications";
+	const gchar *format = "<span foreground='white' size='medium'><b>\%s</b></span>";
+	gchar *markup;
+	markup = g_markup_printf_escaped(format, str);
+	gtk_label_set_markup(GTK_LABEL(recent_frame_label), markup);
+	g_free(markup);
+	gtk_fixed_put(GTK_FIXED(fixed_layout), recent_frame_label, s_width / 12, (s_height / 12));
+	gtk_widget_show_all(recent_frame_label);
+	frame = lapps_create_recent_frame();
 	if (g_list_length(recent_list) > 0)
-		gtk_fixed_put(GTK_FIXED(fixed_layout), recent_frame, s_width / 20, (s_height / 12) - 5);
-	gtk_widget_show_all(recent_frame);
+		gtk_fixed_put(GTK_FIXED(fixed_layout), frame, s_width / 18, (s_height / 8));
+	gtk_widget_show_all(frame);
 	/* ****************************************************************************/
 
 	lapps_show_page(TRUE);

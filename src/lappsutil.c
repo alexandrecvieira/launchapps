@@ -222,9 +222,6 @@ void set_icons_fonts_sizes() {
 	// 1024x768=57 | 1280x800=62 | 1280x1024=68 | 1366x768=63
 	// 1440x900=68 | 1600x900=70 | 1680x1050=75 | 1920x1080=79
 
-	//if (suggested_size < 62) {
-	// icon_size = 24;
-	//} else
 	if (suggested_size >= 57 && suggested_size < 68) {
 		icon_size = 32;
 		font_size = 12;
