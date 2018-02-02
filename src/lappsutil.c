@@ -212,6 +212,10 @@ void set_icons_size() {
 	s_width = gdk_screen_get_width(screen);
 	double suggested_size = (pow(s_width * s_height, ((double) (1.0 / 3.0))) / 1.6);
 
+	openlog("LaunchApps", LOG_PID | LOG_CONS, LOG_USER);
+	syslog(LOG_INFO, "Icon Size: %f", suggested_size);
+	closelog();
+
 	if (suggested_size < 27) {
 		icon_size = 24;
 	} else if (suggested_size >= 27 && suggested_size < 40) {

@@ -28,6 +28,8 @@
 #include <glib-object.h>
 #include <glib/gstdio.h>
 
+#include <syslog.h>
+
 #include <wand/MagickWand.h>
 
 extern int icon_size, s_height, s_width, grid[2];

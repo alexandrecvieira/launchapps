@@ -27,8 +27,6 @@
 #include <sys/types.h>
 #include <pwd.h>
 
-#include <syslog.h>
-
 #include <gdk/gdkkeysyms.h>
 
 #include <libfm/fm-gtk.h>
