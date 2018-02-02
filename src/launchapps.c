@@ -457,9 +457,9 @@ static void lapps_show_page(gboolean up) {
 		table_list = g_list_append(table_list, table);
 
 		if (g_list_length(recent_list) == 0)
-		gtk_fixed_put(GTK_FIXED(fixed_layout), table, (s_width / 8) + 15, (s_height / 5) + 10);
+			gtk_fixed_put(GTK_FIXED(fixed_layout), table, (s_width / 8) + 15, (s_height / 5) + 5);
 		else
-		gtk_fixed_put(GTK_FIXED(fixed_layout), table, (s_width / 4) - 50, (s_height / 5) + 10);
+			gtk_fixed_put(GTK_FIXED(fixed_layout), table, (s_width / 4) - 50, (s_height / 5) + 5);
 	}
 
 	for (test_list = table_list; test_list != NULL; test_list = test_list->next) {
@@ -713,7 +713,7 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 
 	lapps_show_page(TRUE);
 
-	int indicator_ypos = s_height - (INDICATORHEIGHT + 20);
+	int indicator_ypos = s_height - (INDICATORHEIGHT + 40);
 
 	indicator = gtk_image_new();
 	gtk_widget_set_size_request(indicator, INDICATORWIDTH, INDICATORHEIGHT);
