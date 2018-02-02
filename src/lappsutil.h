@@ -32,9 +32,11 @@
 
 #include <wand/MagickWand.h>
 
-extern int icon_size, s_height, s_width, grid[2];
+extern int icon_size, font_size;
+extern int indicator_font_size, indicator_width, indicator_height;
+extern int s_height, s_width, grid[2];
 
-void set_icons_size();
+void set_icons_fonts_sizes();
 gboolean blur_background(gchar *image, gchar *bg_image);
 GdkPixbuf *create_app_name(gchar *app_name, double font_size);
 GdkPixbuf *shadow_icon(GdkPixbuf *src_pix);

@@ -44,10 +44,10 @@
 #define CONFPATH "/.config/launchapps/"
 #define CONFFILE "launchapps.recent"
 #define DEFAULTBG "launchapps-bg-default.jpg"
-#define DEFAULTFONTSIZE 16
-#define INDICATORFONTSIZE 32
-#define INDICATORWIDTH 32
-#define INDICATORHEIGHT 42 /* INDICATORWIDTH + 10 */
+// #define DEFAULTFONTSIZE 16
+// #define INDICATORFONTSIZE 32
+// #define INDICATORWIDTH 32
+// #define INDICATORHEIGHT 42 /* INDICATORWIDTH + 10 */
 
 typedef enum {
 	LA_NONE, LA_ICONIFY
@@ -233,8 +233,8 @@ static GtkWidget *lapps_create_table() {
 			g_signal_connect(G_OBJECT(event_box), "button-release-event", G_CALLBACK(lapps_item_clicked_window_close),
 					NULL);
 			gtk_box_pack_start(GTK_BOX(app_box), gtk_image_new_from_pixbuf(target_icon_pix), FALSE, FALSE, 0);
-			app_label = gtk_image_new_from_pixbuf(create_app_name(app_name, DEFAULTFONTSIZE));
-			gtk_widget_set_size_request(app_label, 250, 50);
+			app_label = gtk_image_new_from_pixbuf(create_app_name(app_name, font_size));
+			gtk_widget_set_size_request(app_label, (s_width / 8), 50);
 			gtk_box_pack_start(GTK_BOX(app_box), app_label, FALSE, FALSE, 0);
 			gtk_table_attach(GTK_TABLE(this_table), event_box, j, j + 1, i, i + 1, GTK_SHRINK, GTK_FILL, 0, 0);
 			g_object_unref(icon_pix);
@@ -294,7 +294,7 @@ static GtkWidget *lapps_create_recent_frame() {
 		g_signal_connect(G_OBJECT(event_box), "button-release-event", G_CALLBACK(lapps_item_clicked_window_close),
 				NULL);
 		gtk_box_pack_start(GTK_BOX(app_box), gtk_image_new_from_pixbuf(target_icon_pix), FALSE, FALSE, 0);
-		app_label = gtk_image_new_from_pixbuf(create_app_name(app_name, DEFAULTFONTSIZE));
+		app_label = gtk_image_new_from_pixbuf(create_app_name(app_name, font_size));
 		gtk_widget_set_size_request(app_label, 250, 50);
 		gtk_box_pack_start(GTK_BOX(app_box), app_label, FALSE, FALSE, 0);
 		gtk_box_pack_start(GTK_BOX(main_vbox), event_box, TRUE, TRUE, 0);
@@ -377,7 +377,7 @@ static void lapps_update_indicator_rw(gboolean border) {
 	sprintf(page_char, "%d", page);
 
 	if (GTK_IMAGE(indicator))
-		gtk_image_set_from_pixbuf(GTK_IMAGE(indicator), create_app_name(g_strdup(page_char), INDICATORFONTSIZE));
+		gtk_image_set_from_pixbuf(GTK_IMAGE(indicator), create_app_name(g_strdup(page_char), indicator_font_size));
 
 	if (page > 1) {
 		if (GTK_IMAGE(indicator_rw) && border)
@@ -455,9 +455,9 @@ static void lapps_show_page(gboolean up) {
 		table_list = g_list_append(table_list, table);
 
 		if (g_list_length(recent_list) == 0)
-			gtk_fixed_put(GTK_FIXED(fixed_layout), table, (s_width / 8) + 15, (s_height / 5) + 5);
+			gtk_fixed_put(GTK_FIXED(fixed_layout), table, (s_width / 8) + 40, (s_height / 5) + 5);
 		else
-			gtk_fixed_put(GTK_FIXED(fixed_layout), table, (s_width / 4) - 50, (s_height / 5) + 5);
+			gtk_fixed_put(GTK_FIXED(fixed_layout), table, (s_width / 4) - 35, (s_height / 5) + 5);
 	}
 
 	for (test_list = table_list; test_list != NULL; test_list = test_list->next) {
@@ -711,19 +711,19 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 
 	lapps_show_page(TRUE);
 
-	int indicator_ypos = s_height - (INDICATORHEIGHT + 40);
+	int indicator_ypos = s_height - (indicator_height + 40);
 
 	indicator = gtk_image_new();
-	gtk_widget_set_size_request(indicator, INDICATORWIDTH, INDICATORHEIGHT);
-	gtk_fixed_put(GTK_FIXED(fixed_layout), indicator, (s_width / 2) - (INDICATORWIDTH / 2), indicator_ypos);
+	gtk_widget_set_size_request(indicator, indicator_width, indicator_height);
+	gtk_fixed_put(GTK_FIXED(fixed_layout), indicator, (s_width / 2) - (indicator_width / 2), indicator_ypos);
 	gtk_widget_show(indicator);
 
 	indicator_rw = gtk_image_new();
-	gtk_widget_set_size_request(GTK_WIDGET(indicator_rw), INDICATORWIDTH, INDICATORHEIGHT);
+	gtk_widget_set_size_request(GTK_WIDGET(indicator_rw), indicator_width, indicator_height);
 	indicator_event_box = gtk_event_box_new();
 	gtk_container_add(GTK_CONTAINER(indicator_event_box), GTK_WIDGET(indicator_rw));
 	gtk_event_box_set_visible_window(GTK_EVENT_BOX(indicator_event_box), FALSE);
-	gtk_fixed_put(GTK_FIXED(fixed_layout), indicator_event_box, (s_width / 2) - (INDICATORWIDTH * 2), indicator_ypos);
+	gtk_fixed_put(GTK_FIXED(fixed_layout), indicator_event_box, (s_width / 2) - (indicator_width * 2), indicator_ypos);
 	g_signal_connect(G_OBJECT(indicator_event_box), "button-press-event", G_CALLBACK(lapps_indicator_rw_clicked), NULL);
 	g_signal_connect(G_OBJECT(indicator_event_box), "enter-notify-event", G_CALLBACK(lapps_indicator_rw_hover), NULL);
 	g_signal_connect(G_OBJECT(indicator_event_box), "leave-notify-event", G_CALLBACK(lapps_indicator_rw_hover), NULL);
@@ -731,11 +731,11 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 	gtk_widget_show_all(indicator_event_box);
 
 	indicator_fw = gtk_image_new();
-	gtk_widget_set_size_request(GTK_WIDGET(indicator_fw), INDICATORWIDTH, INDICATORHEIGHT);
+	gtk_widget_set_size_request(GTK_WIDGET(indicator_fw), indicator_width, indicator_height);
 	indicator_event_box = gtk_event_box_new();
 	gtk_container_add(GTK_CONTAINER(indicator_event_box), GTK_WIDGET(indicator_fw));
 	gtk_event_box_set_visible_window(GTK_EVENT_BOX(indicator_event_box), FALSE);
-	gtk_fixed_put(GTK_FIXED(fixed_layout), indicator_event_box, (s_width / 2) + INDICATORWIDTH, indicator_ypos);
+	gtk_fixed_put(GTK_FIXED(fixed_layout), indicator_event_box, (s_width / 2) + indicator_width, indicator_ypos);
 	g_signal_connect(G_OBJECT(indicator_event_box), "button-press-event", G_CALLBACK(lapps_indicator_fw_clicked), NULL);
 	g_signal_connect(G_OBJECT(indicator_event_box), "enter-notify-event", G_CALLBACK(lapps_indicator_fw_hover), NULL);
 	g_signal_connect(G_OBJECT(indicator_event_box), "leave-notify-event", G_CALLBACK(lapps_indicator_fw_hover), NULL);
@@ -778,9 +778,6 @@ static gboolean lapps_apply_configuration(gpointer user_data) {
 	gboolean blurred;
 
 	confdir = g_strdup(g_strconcat(g_strdup(fm_get_home_dir()), CONFPATH, NULL));
-	if (!g_file_test(confdir, G_FILE_TEST_EXISTS & G_FILE_TEST_IS_DIR)) {
-		g_mkdir(confdir, 0700);
-	}
 
 	lapps->bg_image = g_strconcat(IMAGEPATH, DEFAULTBG, NULL);
 
@@ -857,13 +854,19 @@ static GtkWidget *lapps_constructor(LXPanel *panel, config_setting_t *settings) 
 
 	lapps->version = g_strdup(VERSION);
 
-	set_icons_size();
+	set_icons_fonts_sizes();
 
 	page_index = 0;
 
 	running = FALSE;
 
 	recent_list = NULL;
+
+	// check configuration diretory
+	gchar *confdir = g_strdup(g_strconcat(g_strdup(fm_get_home_dir()), CONFPATH, NULL));
+	if (!g_file_test(confdir, G_FILE_TEST_EXISTS & G_FILE_TEST_IS_DIR)) {
+		g_mkdir(confdir, 0700);
+	}
 
 	lapps_loadsave_recent(TRUE);
 

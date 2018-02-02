@@ -21,7 +21,9 @@
 #include "lappsutil.h"
 
 /* grid[0] = rows | grid[1] = columns */
-int icon_size, s_height, s_width, grid[2];
+int icon_size, font_size;
+int indicator_font_size, indicator_width, indicator_height;
+int s_height, s_width, grid[2];
 
 gboolean blur_background(gchar *image, gchar *bg_image) {
 	MagickWand *inWand = NULL;
@@ -206,7 +208,7 @@ GdkPixbuf *shadow_icon(GdkPixbuf *src_pix) {
 	return bg_target_pix;
 }
 
-void set_icons_size() {
+void set_icons_fonts_sizes() {
 	GdkScreen *screen = gdk_screen_get_default();
 	s_height = gdk_screen_get_height(screen);
 	s_width = gdk_screen_get_width(screen);
@@ -220,15 +222,23 @@ void set_icons_size() {
 	// 1024x768=57 | 1280x800=62 | 1280x1024=68 | 1366x768=63
 	// 1440x900=68 | 1600x900=70 | 1680x1050=75 | 1920x1080=79
 
-	if (suggested_size < 62) {
-		icon_size = 24;
-	} else if (suggested_size >= 62 && suggested_size < 68) {
+	//if (suggested_size < 62) {
+	// icon_size = 24;
+	//} else
+	if (suggested_size >= 57 && suggested_size < 68) {
 		icon_size = 32;
+		font_size = 12;
 	} else if (suggested_size >= 68 && suggested_size < 79) {
 		icon_size = 48;
+		font_size = 14;
 	} else if (suggested_size >= 79) {
 		icon_size = 64;
+		font_size = 16;
 	}
+
+	indicator_font_size = font_size * 2;
+	indicator_width = font_size * 2;
+	indicator_height = (font_size * 2) + 10;
 
 	if (s_width > s_height) { // normal landscape orientation
 		grid[0] = 4;
