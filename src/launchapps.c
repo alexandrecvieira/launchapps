@@ -273,9 +273,9 @@ static GtkWidget *lapps_create_recent_frame() {
 
 	main_vbox = gtk_vbox_new(TRUE, 1);
 	GtkWidget *label = gtk_label_new(NULL);
-	const char *str = "Recent Applications";
-	const char *format = "<span foreground=\"white\" size=\"medium\"><b>\%s</b></span>";
-	char *markup;
+	const gchar *str = "Recent Applications";
+	const gchar *format = "<span foreground='white' size='medium'><b>\%s</b></span>";
+	gchar *markup;
 	markup = g_markup_printf_escaped(format, str);
 	gtk_label_set_markup(GTK_LABEL(label), markup);
 	g_free(markup);
@@ -295,7 +295,7 @@ static GtkWidget *lapps_create_recent_frame() {
 				NULL);
 		gtk_box_pack_start(GTK_BOX(app_box), gtk_image_new_from_pixbuf(target_icon_pix), FALSE, FALSE, 0);
 		app_label = gtk_image_new_from_pixbuf(create_app_name(app_name, font_size));
-		gtk_widget_set_size_request(app_label, 250, 50);
+		gtk_widget_set_size_request(app_label, (s_width / 8), 50);
 		gtk_box_pack_start(GTK_BOX(app_box), app_label, FALSE, FALSE, 0);
 		gtk_box_pack_start(GTK_BOX(main_vbox), event_box, TRUE, TRUE, 0);
 		g_object_unref(icon_pix);
