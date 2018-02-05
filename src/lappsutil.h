@@ -32,9 +32,10 @@
 
 #include <wand/MagickWand.h>
 
-extern int icon_size, font_size;
+extern int icon_size, font_size, app_label_width, app_label_height;
 extern int indicator_font_size, indicator_width, indicator_height;
 extern int s_height, s_width, grid[2];
+extern double screen_size_relation;
 
 void set_icons_fonts_sizes();
 gboolean blur_background(gchar *image, gchar *bg_image);
