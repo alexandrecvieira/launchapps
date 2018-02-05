@@ -1,4 +1,18 @@
 
+2018-02-04  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* Layout management for all commons resolutions(TODO: fix app label size)
+
+2018-02-02  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* Positions Adjusts: Recent Applications frame
+	* Adjusts on Recent Applications frame
+	* Indicatore font size, width and height
+	* Icons sizes for commons resolutions
+	* log icon size for test
+	* Adjustment of the indicators and table
+	* Completion improvement: search on select
+
 2018-02-01  Alexandre C Vieira <acamargo.vieira@gmail.com>
 
 	* Iniciando resolução de problemas com telas diferentes de 1920x1080
