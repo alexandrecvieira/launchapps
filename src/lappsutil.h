@@ -38,9 +38,9 @@ extern int s_height, s_width, grid[2];
 extern double screen_size_relation;
 
 void set_icons_fonts_sizes();
-gboolean blur_background(gchar *image, gchar *bg_image);
-GdkPixbuf *create_app_name(gchar *app_name, double font_size);
+gboolean blur_background(const char *image, const char *bg_image);
+GdkPixbuf *create_app_name(const char *app_name, double font_size);
 GdkPixbuf *shadow_icon(GdkPixbuf *src_pix);
-gint app_name_comparator(GAppInfo *item1, GAppInfo *item2);
+int app_name_comparator(GAppInfo *item1, GAppInfo *item2);
 
 #endif /* LAPPSUTIL_H */

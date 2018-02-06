@@ -26,7 +26,7 @@ int indicator_font_size, indicator_width, indicator_height;
 int s_height, s_width, grid[2];
 double screen_size_relation;
 
-gboolean blur_background(gchar *image, gchar *bg_image) {
+gboolean blur_background(const char *image, const char *bg_image) {
 	MagickWand *inWand = NULL;
 	MagickWand *outWand = NULL;
 	MagickBooleanType status;
@@ -57,7 +57,7 @@ gboolean blur_background(gchar *image, gchar *bg_image) {
 	return TRUE;
 }
 
-GdkPixbuf *create_app_name(gchar *app_name, double font_size) {
+GdkPixbuf *create_app_name(const char *app_name, double font_size) {
 	GdkPixbuf *bg_target_pix = NULL;
 	MagickWand *magick_wand = NULL;
 	MagickWand *c_wand = NULL;
@@ -66,9 +66,9 @@ GdkPixbuf *create_app_name(gchar *app_name, double font_size) {
 	size_t width, height;
 	gint rowstride, row;
 	guchar *pixels = NULL;
-	gchar *name = NULL;
-	gchar *name_two = NULL;
-	gchar *target_name = NULL;
+	char *name = NULL;
+	char *name_two = NULL;
+	char *target_name = NULL;
 	int i = 0;
 	int spaces = 0;
 
@@ -76,12 +76,8 @@ GdkPixbuf *create_app_name(gchar *app_name, double font_size) {
 		while (*app_name) {
 			if (*app_name == ' ')
 				spaces++;
-			if (screen_size_relation < 68)
-				if (spaces > 3)
-					break;
-			if (screen_size_relation > 68)
-				if (spaces > 2)
-					break;
+			if (spaces > 2)
+				break;
 			app_name++;
 			i++;
 		}
@@ -90,6 +86,9 @@ GdkPixbuf *create_app_name(gchar *app_name, double font_size) {
 		target_name = g_strconcat(name, "\n", name_two, NULL);
 	} else
 		target_name = g_strdup(app_name);
+
+	g_free(name);
+	g_free(name_two);
 
 	MagickWandGenesis();
 	magick_wand = NewMagickWand();
@@ -111,6 +110,8 @@ GdkPixbuf *create_app_name(gchar *app_name, double font_size) {
 
 	// Now draw the text
 	DrawAnnotation(d_wand, 0, font_size, target_name);
+
+	g_free(target_name);
 
 	// Draw the image on to the magick_wand
 	MagickDrawImage(magick_wand, d_wand);
@@ -168,7 +169,7 @@ GdkPixbuf *shadow_icon(GdkPixbuf *src_pix) {
 	size_t width, height;
 	gint rowstride, row;
 	guchar *pixels = NULL;
-	gchar *buffer = NULL;
+	char *buffer = NULL;
 	gsize buffer_size;
 	MagickWand *src_wand = NULL;
 	MagickWand *dest_wand = NULL;
@@ -253,7 +254,7 @@ void set_icons_fonts_sizes() {
 	}
 }
 
-gint app_name_comparator(GAppInfo *item1, GAppInfo *item2) {
+int app_name_comparator(GAppInfo *item1, GAppInfo *item2) {
 	return g_ascii_strcasecmp(g_app_info_get_name(item1), g_app_info_get_name(item2));
 }
 
