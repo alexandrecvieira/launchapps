@@ -64,7 +64,7 @@ GdkPixbuf *create_app_name(const char *app_name, double font_size) {
 	DrawingWand *d_wand = NULL;
 	PixelWand *p_wand = NULL;
 	size_t width, height;
-	gint rowstride, row;
+	int rowstride, row;
 	guchar *pixels = NULL;
 	char *name = NULL;
 	char *name_two = NULL;
@@ -167,7 +167,7 @@ GdkPixbuf *create_app_name(const char *app_name, double font_size) {
 GdkPixbuf *shadow_icon(GdkPixbuf *src_pix) {
 	GdkPixbuf *bg_target_pix = NULL;
 	size_t width, height;
-	gint rowstride, row;
+	int rowstride, row;
 	guchar *pixels = NULL;
 	char *buffer = NULL;
 	gsize buffer_size;
@@ -219,10 +219,6 @@ void set_icons_fonts_sizes() {
 	s_height = gdk_screen_get_height(screen);
 	s_width = gdk_screen_get_width(screen);
 	screen_size_relation = (pow(s_width * s_height, ((double) (1.0 / 3.0))) / 1.6);
-
-	openlog("LaunchApps", LOG_PID | LOG_CONS, LOG_USER);
-	syslog(LOG_INFO, "Screen relation: %f", screen_size_relation);
-	closelog();
 
 	// common screen size resolution = suggested_size
 	// 1024x768=57 | 1280x800=62 | 1280x1024=68 | 1366x768=63

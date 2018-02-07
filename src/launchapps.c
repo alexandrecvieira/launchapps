@@ -60,7 +60,6 @@ GList *recent_tmp;
 GList *table_list;
 gboolean running;
 gboolean filtered;
-int pages;
 int page_index;
 int page_count;
 int app_count;
@@ -228,7 +227,7 @@ static GtkWidget *lapps_create_table() {
 				i++;
 			}
 			if (i == grid[0]) {
-				app_list = g_list_copy(test_list);
+				app_list = g_list_copy(test_list->next);
 				break;
 			}
 		}
@@ -259,9 +258,9 @@ static GtkWidget *lapps_create_recent_frame(GList *recent_list) {
 	apps_vbox = gtk_vbox_new(TRUE, 0);
 
 	GtkWidget *recent_frame_label = gtk_label_new(NULL);
-	const gchar *str = "Recent Applications";
-	const gchar *format = "<span foreground='white' size='medium'><b>\%s</b></span>";
-	gchar *markup;
+	const char *str = "Recent Applications";
+	const char *format = "<span foreground='white' size='medium'><b>\%s</b></span>";
+	char *markup;
 	markup = g_markup_printf_escaped(format, str);
 	gtk_label_set_markup(GTK_LABEL(recent_frame_label), markup);
 	g_free(markup);
@@ -347,7 +346,7 @@ static void lapps_app_list(char *filter) {
 }
 
 // calculates the number of pages
-static gint lapps_pages() {
+static int lapps_pages() {
 	int total_page_itens = 0;
 	int pages = 0;
 
@@ -579,9 +578,6 @@ static void lapps_search_selected(char *filter) {
 	char *name_down;
 	char *filter_down = g_str_to_ascii(g_ascii_strdown(filter, -1), NULL);
 
-	page_index = 0;
-	page_count = 0;
-
 	if (strlen(filter) > 0) {
 		filtered = TRUE;
 		lapps_app_list(filter);
@@ -602,14 +598,14 @@ static void lapps_search_selected(char *filter) {
 	}
 }
 
-static gboolean lapps_match_completion(GtkEntryCompletion *completion, const gchar *key, GtkTreeIter *iter,
+static gboolean lapps_match_completion(GtkEntryCompletion *completion, const char *key, GtkTreeIter *iter,
 		gpointer user_data) {
 	GtkTreeModel *model = gtk_entry_completion_get_model(completion);
 	char *name;
 	char *description;
 	char *id;
 	gtk_tree_model_get(model, iter, 0, &name, 1, &description, 2, &id, -1);
-	gchar *tofind = g_str_to_ascii(g_ascii_strdown(key, -1), NULL);
+	char *tofind = g_str_to_ascii(g_ascii_strdown(key, -1), NULL);
 	gboolean match = (g_strrstr(g_str_to_ascii(g_ascii_strdown(name, -1), NULL), tofind) == NULL ? FALSE : TRUE)
 			|| (g_strrstr(g_str_to_ascii(g_ascii_strdown(description, -1), NULL), key) == NULL ? FALSE : TRUE)
 			|| (g_strrstr(g_str_to_ascii(g_ascii_strdown(id, -1), NULL), key) == NULL ? FALSE : TRUE);
@@ -639,6 +635,9 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 	table = NULL;
 	app_list = NULL;
 	table_list = NULL;
+
+	// populates the global list of applications
+	lapps_app_list(NULL);
 
 	// window(global var)
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -694,8 +693,6 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 	page_count = 0;
 	filtered = FALSE;
 
-	lapps_app_list(NULL);
-
 	// completion ******************************************************************
 	GtkEntryCompletion *completion = gtk_entry_completion_new();
 	gtk_entry_completion_set_minimum_key_length(completion, 2);
@@ -718,15 +715,13 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 	gtk_entry_set_completion(GTK_ENTRY(entry), completion);
 	gtk_entry_completion_complete(completion);
 	g_object_unref(completion);
-	g_list_free(test_list);
 
 	// recent applications and table ***********************************************
 	GList *recent_list = NULL;
+	GList *test_recent_list = NULL;
 	recent_tmp = NULL;
 	lapps_loadsave_recent(TRUE);
 	if (recent_tmp != NULL && g_list_length(recent_tmp) > 0) {
-		GList *test_list = NULL;
-		GList *test_recent_list = NULL;
 		char *app_name = NULL;
 		for (test_recent_list = recent_tmp; test_recent_list != NULL; test_recent_list = test_recent_list->next) {
 			for (test_list = app_list; test_list != NULL; test_list = test_list->next) {
