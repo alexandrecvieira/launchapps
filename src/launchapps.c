@@ -56,7 +56,6 @@ GtkWidget *indicator;
 GtkWidget *indicator_fw;
 GtkWidget *indicator_rw;
 GList *app_list;
-GList *recent_list;
 GList *recent_tmp;
 GList *table_list;
 gboolean running;
@@ -76,31 +75,33 @@ typedef struct {
 	char *version;
 } LaunchAppsPlugin;
 
+// callback when window is to be closed
 static void lapps_main_window_close(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
 	gtk_widget_destroy(window);
 	running = FALSE;
 }
 
-// load recent TRUE | save recent FALSE
+// load recent: read = TRUE | save recent: read = FALSE
 static void lapps_loadsave_recent(gboolean read) {
 	FILE *conf_file;
 
-	gchar *path = g_strconcat(fm_get_home_dir(), CONFPATH, CONFFILE, NULL);
+	char *home = g_strdup(fm_get_home_dir());
+	char *path = g_strconcat(home, CONFPATH, CONFFILE, NULL);
 
 	if (read) {
-		conf_file = g_fopen(path, "r");
+		conf_file = fopen(path, "r");
 		if (conf_file == NULL) {
 			openlog("LaunchApps", LOG_PID | LOG_CONS, LOG_USER);
 			syslog(LOG_INFO, "Recent Applications: Conf File Read Error");
 			closelog();
 		} else {
-			gchar *data;
+			char data[100];
 			int len = 0;
 			while (fgets(data, 100, conf_file) != NULL) {
 				len = strlen(data);
 				if (data[len - 1] == '\n')
 					data[len - 1] = '\0';
-				recent_tmp = g_list_append(recent_tmp, strdup(data));
+				recent_tmp = g_list_append(recent_tmp, g_strdup(data));
 			}
 			fclose(conf_file);
 		}
@@ -112,65 +113,64 @@ static void lapps_loadsave_recent(gboolean read) {
 			closelog();
 		} else {
 			GList *test_list = NULL;
-			for (test_list = recent_list; test_list != NULL; test_list = test_list->next) {
-				char app_name[100];
-				strcpy(app_name, strcat(strdup(g_app_info_get_name(test_list->data)), "\n"));
-				fputs(app_name, conf_file);
+			for (test_list = recent_tmp; test_list != NULL; test_list = test_list->next) {
+				fputs(g_strdup(g_strconcat(test_list->data, "\n", NULL)), conf_file);
 			}
-			//g_list_free(test_list);
-			//free(app_name);
 			fclose(conf_file);
 		}
 	}
-	//g_list_free(test_list);
-	//free(app_name);
+
+	g_free(home);
+	g_free(path);
 }
 
-static void lapps_update_recent(GAppInfo *app) {
-	if (g_list_length(recent_list) == 0) {
-		recent_list = g_list_prepend(recent_list, app);
+static void lapps_update_recent(char *app_name) {
+	if (g_list_length(recent_tmp) == 0) {
+		recent_tmp = g_list_prepend(recent_tmp, app_name);
 		lapps_loadsave_recent(FALSE);
 	} else {
 		GList *test_list = NULL;
 		int exists = 0;
 		int item_position;
-		for (test_list = recent_list; test_list != NULL; test_list = test_list->next) {
-			if (g_strcmp0(g_app_info_get_name(test_list->data), g_app_info_get_name(app)) == 0) {
-				item_position = g_list_position(recent_list, test_list);
+		for (test_list = recent_tmp; test_list != NULL; test_list = test_list->next) {
+			if (g_strcmp0(test_list->data, app_name) == 0) {
+				item_position = g_list_position(recent_tmp, test_list);
 				exists = 1;
 				break;
 			}
 		}
 		// recent_list contains item
 		if (exists == 1) {
-			GList* item = g_list_nth(recent_list, item_position);
-			recent_list = g_list_remove_link(recent_list, item);
+			GList* item = g_list_nth(recent_tmp, item_position);
+			recent_tmp = g_list_remove_link(recent_tmp, item);
 			g_list_free(item);
-			recent_list = g_list_prepend(recent_list, app);
+			recent_tmp = g_list_prepend(recent_tmp, app_name);
 			lapps_loadsave_recent(FALSE);
 		}
 		// recent_list does not contain item
 		if (exists == 0) {
-			recent_list = g_list_prepend(recent_list, app);
+			recent_tmp = g_list_prepend(recent_tmp, app_name);
 			lapps_loadsave_recent(FALSE);
 		}
 		// remove last item (max 6 items)
-		if (g_list_length(recent_list) > 6) {
-			GList* item = g_list_last(recent_list);
-			recent_list = g_list_remove_link(recent_list, item);
+		if (g_list_length(recent_tmp) > 6) {
+			GList* item = g_list_last(recent_tmp);
+			recent_tmp = g_list_remove_link(recent_tmp, item);
 			g_list_free(item);
 			lapps_loadsave_recent(FALSE);
 		}
 	}
-	//g_list_free(test_list);
 }
 
+// callback when application is to be run
 static void lapps_exec(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
 	GAppInfo *app = (GAppInfo *) user_data;
-	//lapps_update_recent(app);
+	const char *app_name = g_app_info_get_name(app);
+	lapps_update_recent(g_strdup(app_name));
 	g_app_info_launch(g_app_info_dup(app), NULL, NULL, NULL);
 }
 
+// create application's icon and its shadow
 static GdkPixbuf *lapps_application_icon(GAppInfo *appinfo) {
 	GdkPixbuf *icon = NULL;
 	GtkIconInfo *icon_info = NULL;
@@ -181,6 +181,7 @@ static GdkPixbuf *lapps_application_icon(GAppInfo *appinfo) {
 	return icon;
 }
 
+// create main table of applications
 static GtkWidget *lapps_create_table() {
 	GtkWidget *app_box = NULL;
 	GtkWidget *event_box = NULL;
@@ -241,7 +242,8 @@ static GtkWidget *lapps_create_table() {
 	return this_table;
 }
 
-static GtkWidget *lapps_create_recent_frame() {
+// create recent app bar
+static GtkWidget *lapps_create_recent_frame(GList *recent_list) {
 	GtkWidget *app_box = NULL;
 	GtkWidget *event_box = NULL;
 	GtkImage *app_label = NULL;
@@ -249,7 +251,7 @@ static GtkWidget *lapps_create_recent_frame() {
 	GList *test_list = NULL;
 	GdkPixbuf *icon_pix = NULL;
 	GdkPixbuf *target_icon_pix = NULL;
-	gchar *app_name = NULL;
+	char *app_name = NULL;
 
 	GtkWidget *recent_frame = gtk_frame_new(NULL);
 	gtk_frame_set_shadow_type(GTK_FRAME(recent_frame), GTK_SHADOW_IN);
@@ -287,11 +289,12 @@ static GtkWidget *lapps_create_recent_frame() {
 
 	gtk_container_add(GTK_CONTAINER(recent_frame), apps_vbox);
 
-	//g_free(app_name);
+	g_free(app_name);
 
 	return recent_frame;
 }
 
+// list the applications to then create the main table or recent application bar
 static void lapps_app_list(char *filter) {
 	GList *test_list = NULL;
 	GList *all_app_list = NULL;
@@ -343,6 +346,7 @@ static void lapps_app_list(char *filter) {
 	g_list_free(test_list);
 }
 
+// calculates the number of pages
 static gint lapps_pages() {
 	int total_page_itens = 0;
 	int pages = 0;
@@ -517,7 +521,7 @@ static void lapps_indicator_fw_clicked(GtkWidget *widget, GdkEventButton *event,
 }
 
 static void lapps_search(GtkEntry *entry, GtkEntryIconPosition icon_pos, GdkEventButton *event, gpointer userdata) {
-	const gchar *filter = gtk_entry_get_text(entry);
+	const char *filter = gtk_entry_get_text(entry);
 
 	page_index = 0;
 	page_count = 0;
@@ -547,7 +551,7 @@ static void lapps_search(GtkEntry *entry, GtkEntryIconPosition icon_pos, GdkEven
 }
 
 static void lapps_search_(GtkEntry *entry, gpointer userdata) {
-	const gchar *filter = g_ascii_strdown(gtk_entry_get_text(entry), -1);
+	const char *filter = g_ascii_strdown(gtk_entry_get_text(entry), -1);
 
 	page_index = 0;
 	page_count = 0;
@@ -592,7 +596,7 @@ static void lapps_search_selected(char *filter) {
 	}
 
 	if (app_selected != NULL) {
-		//lapps_update_recent(app_selected);
+		lapps_update_recent(g_strdup(name));
 		lapps_exec(NULL, NULL, (gpointer)g_app_info_dup(app_selected));
 		lapps_main_window_close(NULL, NULL, NULL);
 	}
@@ -717,6 +721,9 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 	g_list_free(test_list);
 
 	// recent applications and table ***********************************************
+	GList *recent_list = NULL;
+	recent_tmp = NULL;
+	lapps_loadsave_recent(TRUE);
 	if (recent_tmp != NULL && g_list_length(recent_tmp) > 0) {
 		GList *test_list = NULL;
 		GList *test_recent_list = NULL;
@@ -730,14 +737,10 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 				}
 			}
 		}
-		g_free(app_name);
-		g_list_free(test_recent_list);
-		g_list_free(test_list);
-		g_list_free(recent_tmp);
 	}
 	GtkWidget *apps_hbox = gtk_hbox_new(FALSE, screen_size_relation);
 	GtkWidget *frame_vbox = gtk_vbox_new(FALSE, 0);
-	GtkWidget *frame = lapps_create_recent_frame();
+	GtkWidget *frame = lapps_create_recent_frame(recent_list);
 	GtkWidget *apps_hbox_align = gtk_alignment_new(0.5, 0.5, 0.0, 0.0);
 	GtkWidget *table_align = gtk_alignment_new(0.5, 0.5, 0.0, 0.0);
 	table_fixed = gtk_fixed_new();
@@ -802,7 +805,6 @@ static void lapps_button_clicked(GtkWidget *widget, GdkEventButton *event, gpoin
 static void lapps_destructor(gpointer user_data) {
 	LaunchAppsPlugin *lapps = (LaunchAppsPlugin *) user_data;
 	g_list_free(app_list);
-	g_list_free(recent_list);
 	g_list_free(recent_tmp);
 	g_list_free(table_list);
 	g_free(lapps->bg_image);
@@ -914,10 +916,6 @@ static GtkWidget *lapps_constructor(LXPanel *panel, config_setting_t *settings) 
 	}
 	g_free(home);
 	g_free(confdir);
-
-	recent_list = NULL;
-	recent_tmp = NULL;
-	//lapps_loadsave_recent(TRUE);
 
 	return p;
 }
