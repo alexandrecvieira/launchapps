@@ -1,4 +1,9 @@
 
+2018-02-06  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* Recent applications disabled until the heap overflow problem is fixed
+	* Type gchar to char
+
 2018-02-04  Alexandre C Vieira <acamargo.vieira@gmail.com>
 
 	* Layout management for all commons resolutions(TODO: fix app label size)
