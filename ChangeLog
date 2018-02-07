@@ -1,6 +1,7 @@
 
 2018-02-07  Alexandre C Vieira <acamargo.vieira@gmail.com>
 
+	* App duplication fixed TODO[segment fault when running the selected app]
 	* Heap overflow issue fixed
 
 2018-02-06  Alexandre C Vieira <acamargo.vieira@gmail.com>
