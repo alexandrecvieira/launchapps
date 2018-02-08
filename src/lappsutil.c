@@ -25,6 +25,7 @@ int icon_size, font_size, app_label_width, app_label_height;
 int indicator_font_size, indicator_width, indicator_height;
 int s_height, s_width, grid[2];
 double screen_size_relation;
+char *recent_label_font_size;
 
 gboolean blur_background(const char *image, const char *bg_image) {
 	MagickWand *inWand = NULL;
@@ -66,29 +67,20 @@ GdkPixbuf *create_app_name(const char *app_name, double font_size) {
 	size_t width, height;
 	int rowstride, row;
 	guchar *pixels = NULL;
-	char *name = NULL;
-	char *name_two = NULL;
 	char *target_name = NULL;
-	int i = 0;
-	int spaces = 0;
 
-	if (strlen(app_name) > 25) {
-		while (*app_name) {
-			if (*app_name == ' ')
-				spaces++;
-			if (spaces > 2)
-				break;
-			app_name++;
-			i++;
-		}
-		name = g_strndup(app_name - i, i);
-		name_two = g_strdup(app_name);
-		target_name = g_strconcat(name, "\n", name_two, NULL);
-	} else
-		target_name = g_strdup(app_name);
-
-	g_free(name);
-	g_free(name_two);
+	char **app_name_splited = g_strsplit(app_name, " ", -1);
+	char **ptr = NULL;
+	int i = 1;
+	for (ptr = app_name_splited; *ptr; ptr++) {
+		if (i == 1)
+			target_name = g_strconcat(*ptr, " ", NULL);
+		if (i > 1 && (i % 2) == 0)
+			target_name = g_strconcat(target_name, *ptr, "\n ", NULL);
+		if (i > 1 && (i % 2) > 0)
+			target_name = g_strconcat(target_name, *ptr, " ", NULL);
+		i++;
+	}
 
 	MagickWandGenesis();
 	magick_wand = NewMagickWand();
@@ -221,25 +213,35 @@ void set_icons_fonts_sizes() {
 	screen_size_relation = (pow(s_width * s_height, ((double) (1.0 / 3.0))) / 1.6);
 
 	// common screen size resolution = suggested_size
-	// 1024x768=57 | 1280x800=62 | 1280x1024=68 | 1366x768=63
-	// 1440x900=68 | 1600x900=70 | 1680x1050=75 | 1920x1080=79
+	// 1024x768=57(~1.33) | 1280x800=62(1.6) | 1280x1024=68(~1.24) | 1366x768=63(~1.77)
+	// 1440x900=68(1.6) | 1600x900=70(~1.77) | 1680x1050=75(1.6) | 1920x1080=79(~1.77)
 
 	if (screen_size_relation >= 57 && screen_size_relation < 68) {
-		icon_size = 32;
+		icon_size = 48;
 		font_size = 12;
+		recent_label_font_size = "x-small";
 	} else if (screen_size_relation >= 68 && screen_size_relation < 79) {
 		icon_size = 48;
 		font_size = 14;
+		recent_label_font_size = "small";
 	} else if (screen_size_relation >= 79) {
 		icon_size = 64;
 		font_size = 16;
+		recent_label_font_size = "medium";
 	}
+
+	if (screen_size_relation <= 58)
+		app_label_width = (icon_size * 2) + (icon_size / 2);
+	else if (screen_size_relation > 58 && screen_size_relation < 79)
+		app_label_width = (icon_size * 3) + (icon_size / 2);
+	else if (screen_size_relation >= 79)
+		app_label_width = icon_size * 4;
 
 	indicator_font_size = font_size * 2;
 	indicator_width = font_size * 2;
 	indicator_height = (font_size * 2) + 10;
-	app_label_width = icon_size * 4;
-	app_label_height = (icon_size / 2) + 10;
+
+	app_label_height = icon_size + 3;
 
 	if (s_width > s_height) { // normal landscape orientation
 		grid[0] = 4;

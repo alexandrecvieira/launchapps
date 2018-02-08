@@ -259,9 +259,9 @@ static GtkWidget *lapps_create_recent_frame(GList *recent_list) {
 
 	GtkWidget *recent_frame_label = gtk_label_new(NULL);
 	const char *str = "Recent Applications";
-	const char *format = "<span foreground='white' size='medium'><b>\%s</b></span>";
+	const char *format = "<span foreground='white' size='%s'><b>\%s</b></span>";
 	char *markup;
-	markup = g_markup_printf_escaped(format, str);
+	markup = g_markup_printf_escaped(format, recent_label_font_size, str);
 	gtk_label_set_markup(GTK_LABEL(recent_frame_label), markup);
 	g_free(markup);
 	gtk_box_pack_start(GTK_BOX(apps_vbox), recent_frame_label, TRUE, TRUE, 0);

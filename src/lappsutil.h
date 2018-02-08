@@ -36,6 +36,7 @@ extern int icon_size, font_size, app_label_width, app_label_height;
 extern int indicator_font_size, indicator_width, indicator_height;
 extern int s_height, s_width, grid[2];
 extern double screen_size_relation;
+extern char *recent_label_font_size;
 
 void set_icons_fonts_sizes();
 gboolean blur_background(const char *image, const char *bg_image);
