@@ -20,7 +20,6 @@
 
 #include "lappsutil.h"
 
-/* grid[0] = rows | grid[1] = columns */
 int icon_size, font_size, app_label_width, app_label_height;
 int indicator_font_size, indicator_width, indicator_height;
 int s_height, s_width, grid[2];
@@ -212,11 +211,15 @@ void set_icons_fonts_sizes() {
 	s_width = gdk_screen_get_width(screen);
 	screen_size_relation = (pow(s_width * s_height, ((double) (1.0 / 3.0))) / 1.6);
 
-	// common screen size resolution = suggested_size
-	// 1024x768=57(~1.33) | 1280x800=62(1.6) | 1280x1024=68(~1.24) | 1366x768=63(~1.77)
-	// 1440x900=68(1.6) | 1600x900=70(~1.77) | 1680x1050=75(1.6) | 1920x1080=79(~1.77)
+	/*openlog("LaunchApps", LOG_PID | LOG_CONS, LOG_USER);
+	syslog(LOG_INFO, "Screen relation: w-%d x h-%d -> %f", s_width, s_height, screen_size_relation);
+	closelog();*/
 
-	if (screen_size_relation >= 57 && screen_size_relation < 68) {
+	// common screen size resolution = suggested_size (s_width / s_height)
+	// 1024x768 = 57.689983 (~1.33) | 1280x800 = 62.996052 (1.6)   | 1280x1024 = 68.399038 (~1.24) | 1366x768  = 63.506375 (~1.77)
+	// 1440x900 = 68.142022 (1.6)   | 1600x900 = 70.577702 (~1.77) | 1680x1050 = 75.517258 (1.6)   | 1920x1080 = 79.699393 (~1.77)
+
+	if (screen_size_relation < 68) {
 		icon_size = 48;
 		font_size = 12;
 		recent_label_font_size = "x-small";
@@ -230,19 +233,23 @@ void set_icons_fonts_sizes() {
 		recent_label_font_size = "medium";
 	}
 
-	if (screen_size_relation <= 58)
-		app_label_width = (icon_size * 2) + (icon_size / 2);
-	else if (screen_size_relation > 58 && screen_size_relation < 79)
-		app_label_width = (icon_size * 3) + (icon_size / 2);
+	if(screen_size_relation < 75)
+		app_label_height = 58;
+	else
+		app_label_height = 68;
+
+	if (screen_size_relation < 62)
+		app_label_width = 120;
+	else if (screen_size_relation >= 62 && screen_size_relation < 79)
+		app_label_width = 160;
 	else if (screen_size_relation >= 79)
-		app_label_width = icon_size * 4;
+		app_label_width = 250;
 
 	indicator_font_size = font_size * 2;
 	indicator_width = font_size * 2;
-	indicator_height = (font_size * 2) + 10;
+	indicator_height = (font_size * 2) + (font_size / 2);
 
-	app_label_height = icon_size + 3;
-
+	/* grid[0] = rows | grid[1] = columns */
 	if (s_width > s_height) { // normal landscape orientation
 		grid[0] = 4;
 		grid[1] = 5;

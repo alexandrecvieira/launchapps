@@ -151,12 +151,21 @@ static void lapps_update_recent(char *app_name) {
 			recent_tmp = g_list_prepend(recent_tmp, app_name);
 			lapps_loadsave_recent(FALSE);
 		}
-		// remove last item (max 6 items)
-		if (g_list_length(recent_tmp) > 6) {
-			GList* item = g_list_last(recent_tmp);
-			recent_tmp = g_list_remove_link(recent_tmp, item);
-			g_list_free(item);
-			lapps_loadsave_recent(FALSE);
+		// remove last item (s_height <= 768 = max 5 items | s_height > 768 = max 6 items)
+		if (s_height < 1024) {
+			if (g_list_length(recent_tmp) > 5) {
+				GList* item = g_list_last(recent_tmp);
+				recent_tmp = g_list_remove_link(recent_tmp, item);
+				g_list_free(item);
+				lapps_loadsave_recent(FALSE);
+			}
+		} else {
+			if (g_list_length(recent_tmp) > 6) {
+				GList* item = g_list_last(recent_tmp);
+				recent_tmp = g_list_remove_link(recent_tmp, item);
+				g_list_free(item);
+				lapps_loadsave_recent(FALSE);
+			}
 		}
 	}
 }
