@@ -1,6 +1,15 @@
 
+2018-02-09  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* Compatibility with the common resolutions tested: TODO: more tests
+
+2018-02-08  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* Adj in the label of the apps for compat with the common resolutions: TODO: app_label_height adjust
+
 2018-02-07  Alexandre C Vieira <acamargo.vieira@gmail.com>
 
+	* Issues fixed, version 1.1.2 will be released
 	* App duplication fixed TODO[segment fault when running the selected app]
 	* Heap overflow issue fixed
 
