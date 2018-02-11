@@ -140,7 +140,7 @@ static void lapps_update_recent(char *app_name) {
 		}
 		// recent_list contains item
 		if (exists == 1) {
-			GList* item = g_list_nth(recent_tmp, item_position);
+			GList *item = g_list_nth(recent_tmp, item_position);
 			recent_tmp = g_list_remove_link(recent_tmp, item);
 			g_list_free(item);
 			recent_tmp = g_list_prepend(recent_tmp, app_name);
@@ -154,14 +154,14 @@ static void lapps_update_recent(char *app_name) {
 		// remove last item (s_height <= 768 = max 5 items | s_height > 768 = max 6 items)
 		if (s_height < 1024) {
 			if (g_list_length(recent_tmp) > 5) {
-				GList* item = g_list_last(recent_tmp);
+				GList *item = g_list_last(recent_tmp);
 				recent_tmp = g_list_remove_link(recent_tmp, item);
 				g_list_free(item);
 				lapps_loadsave_recent(FALSE);
 			}
 		} else {
 			if (g_list_length(recent_tmp) > 6) {
-				GList* item = g_list_last(recent_tmp);
+				GList *item = g_list_last(recent_tmp);
 				recent_tmp = g_list_remove_link(recent_tmp, item);
 				g_list_free(item);
 				lapps_loadsave_recent(FALSE);
@@ -557,6 +557,17 @@ static void lapps_indicator_fw_clicked(GtkWidget *widget, GdkEventButton *event,
 	(page_index < lapps_pages()) ? lapps_show_page(TRUE) : 0;
 }
 
+static void lapps_show_default_page(gboolean app_not_found, GtkEntry *entry) {
+	if (app_not_found)
+		gtk_entry_set_icon_from_stock(GTK_ENTRY(entry), GTK_ENTRY_ICON_PRIMARY, GTK_STOCK_STOP);
+	else
+		gtk_entry_set_icon_from_stock(GTK_ENTRY(entry), GTK_ENTRY_ICON_PRIMARY, NULL);
+	filtered = FALSE;
+	lapps_clear();
+	lapps_app_list(NULL);
+	lapps_show_page(TRUE);
+}
+
 static void lapps_search(GtkEntry *entry, GtkEntryIconPosition icon_pos, GdkEventButton *event, gpointer userdata) {
 	const char *filter = gtk_entry_get_text(entry);
 
@@ -568,22 +579,17 @@ static void lapps_search(GtkEntry *entry, GtkEntryIconPosition icon_pos, GdkEven
 			filtered = TRUE;
 			gtk_entry_set_icon_from_stock(GTK_ENTRY(entry), GTK_ENTRY_ICON_PRIMARY, GTK_STOCK_CLEAR);
 			lapps_app_list(g_strdup(filter));
-			lapps_show_page(TRUE);
-			return;
-		} else {
-			filtered = FALSE;
-			lapps_clear();
-			lapps_app_list(NULL);
-			lapps_show_page(TRUE);
-		}
+			if (g_list_length(app_list) > 0)
+				lapps_show_page(TRUE);
+			else
+				lapps_show_default_page(TRUE, entry);
+		} else
+			lapps_show_default_page(FALSE, entry);
 	}
 
 	if (GTK_ENTRY_ICON_PRIMARY == icon_pos) {
 		gtk_entry_set_text(entry, "");
-		gtk_entry_set_icon_from_stock(GTK_ENTRY(entry), GTK_ENTRY_ICON_PRIMARY, NULL);
-		lapps_clear();
-		lapps_app_list(NULL);
-		lapps_show_page(TRUE);
+		lapps_show_default_page(FALSE, entry);
 	}
 }
 
@@ -597,15 +603,14 @@ static void lapps_search_(GtkEntry *entry, gpointer userdata) {
 		filtered = TRUE;
 		gtk_entry_set_icon_from_stock(GTK_ENTRY(entry), GTK_ENTRY_ICON_PRIMARY, GTK_STOCK_CLEAR);
 		lapps_app_list(g_strdup(filter));
-		lapps_show_page(TRUE);
-		return;
+		if (g_list_length(app_list) > 0)
+			lapps_show_page(TRUE);
+		else {
+			lapps_show_default_page(TRUE, entry);
+		}
 	} else {
 		gtk_entry_set_text(entry, "");
-		gtk_entry_set_icon_from_stock(GTK_ENTRY(entry), GTK_ENTRY_ICON_PRIMARY, NULL);
-		filtered = FALSE;
-		lapps_clear();
-		lapps_app_list(NULL);
-		lapps_show_page(TRUE);
+		lapps_show_default_page(FALSE, entry);
 	}
 }
 
