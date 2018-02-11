@@ -1,4 +1,8 @@
 
+2018-02-11  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* launchapps.c (lapps_show_default_page): Added error icon for app not found
+
 2018-02-09  Alexandre C Vieira <acamargo.vieira@gmail.com>
 
 	* Compatibility with the common resolutions tested: TODO: more tests
