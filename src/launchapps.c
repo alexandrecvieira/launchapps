@@ -200,6 +200,7 @@ static GtkWidget *lapps_create_table() {
 	GdkPixbuf *target_icon_pix = NULL;
 	char *app_name = NULL;
 	char *app_name_old = NULL;
+	char *app_id = NULL;
 
 	this_table = gtk_table_new(grid[0], grid[1], TRUE);
 	gtk_table_set_row_spacings(GTK_TABLE(this_table), 50);
@@ -208,13 +209,14 @@ static GtkWidget *lapps_create_table() {
 	int i = 0;
 	int j = 0;
 
+	char *home = g_strdup(fm_get_home_dir());
+	char *confdir = g_strconcat(home, CONFPATH, NULL);
+
 	for (test_list = app_list; test_list != NULL; test_list = test_list->next) {
 		app_name = g_strdup(g_app_info_get_name(test_list->data));
 		if (g_strcmp0(app_name, app_name_old) == 0) {
 			app_count--;
 		} else {
-			icon_pix = shadow_icon(lapps_application_icon(test_list->data));
-			target_icon_pix = gdk_pixbuf_scale_simple(icon_pix, icon_size, icon_size, GDK_INTERP_BILINEAR);
 			app_box = gtk_vbox_new(TRUE, 0);
 			event_box = gtk_event_box_new();
 			gtk_event_box_set_visible_window(GTK_EVENT_BOX(event_box), FALSE);
@@ -222,7 +224,16 @@ static GtkWidget *lapps_create_table() {
 			g_signal_connect(G_OBJECT(event_box), "button-press-event", G_CALLBACK(lapps_exec),
 					(gpointer )test_list->data);
 			g_signal_connect(G_OBJECT(event_box), "button-release-event", G_CALLBACK(lapps_main_window_close), NULL);
-			gtk_box_pack_start(GTK_BOX(app_box), gtk_image_new_from_pixbuf(target_icon_pix), FALSE, FALSE, 0);
+			target_icon_pix = gdk_pixbuf_new_from_file(g_strdup(g_strconcat(confdir, app_name, NULL)), NULL);
+			if (target_icon_pix == NULL) {
+				icon_pix = shadow_icon(lapps_application_icon(test_list->data),
+						g_strdup(g_strconcat(confdir, app_name, NULL)));
+				target_icon_pix = gdk_pixbuf_scale_simple(icon_pix, icon_size, icon_size, GDK_INTERP_BILINEAR);
+			}
+			gtk_box_pack_start(GTK_BOX(app_box),
+					gtk_image_new_from_pixbuf(
+							gdk_pixbuf_scale_simple(target_icon_pix, icon_size, icon_size, GDK_INTERP_BILINEAR)), FALSE,
+					FALSE, 0);
 			app_label = gtk_image_new_from_pixbuf(create_app_name(app_name, font_size));
 			gtk_widget_set_size_request(app_label, app_label_width, app_label_height);
 			gtk_box_pack_start(GTK_BOX(app_box), app_label, FALSE, FALSE, 0);
@@ -243,6 +254,8 @@ static GtkWidget *lapps_create_table() {
 		app_name_old = g_strdup(app_name);
 	}
 
+	g_free(home);
+	g_free(confdir);
 	g_free(app_name);
 	g_free(app_name_old);
 	g_list_free(test_list);
@@ -277,7 +290,7 @@ static GtkWidget *lapps_create_recent_frame(GList *recent_list) {
 
 	for (test_list = recent_list; test_list != NULL; test_list = test_list->next) {
 		app_name = g_strdup(g_app_info_get_name(test_list->data));
-		icon_pix = shadow_icon(lapps_application_icon(test_list->data));
+		icon_pix = shadow_icon(lapps_application_icon(test_list->data), NULL);
 		target_icon_pix = gdk_pixbuf_scale_simple(icon_pix, icon_size, icon_size, GDK_INTERP_BILINEAR);
 		app_box = gtk_vbox_new(TRUE, 0);
 		event_box = gtk_event_box_new();
@@ -418,7 +431,7 @@ static void lapps_update_indicator_rw(gboolean border) {
 	if (page > 1) {
 		if (GTK_IMAGE(indicator_rw) && border)
 			gtk_image_set_from_pixbuf(GTK_IMAGE(indicator_rw),
-					shadow_icon(gtk_image_get_pixbuf(GTK_IMAGE(indicator_rw))));
+					shadow_icon(gtk_image_get_pixbuf(GTK_IMAGE(indicator_rw)), NULL));
 	} else {
 		if (GTK_IMAGE(indicator_rw))
 			gtk_image_clear(GTK_IMAGE(indicator_rw));
@@ -442,7 +455,7 @@ static void lapps_update_indicator_fw(gboolean border) {
 	if (page < lapps_pages()) {
 		if (GTK_IMAGE(indicator_fw) && border)
 			gtk_image_set_from_pixbuf(GTK_IMAGE(indicator_fw),
-					shadow_icon(gtk_image_get_pixbuf(GTK_IMAGE(indicator_fw))));
+					shadow_icon(gtk_image_get_pixbuf(GTK_IMAGE(indicator_fw)), NULL));
 	} else {
 		if (GTK_IMAGE(indicator_fw))
 			gtk_image_clear(GTK_IMAGE(indicator_fw));

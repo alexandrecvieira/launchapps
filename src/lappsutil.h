@@ -41,7 +41,7 @@ extern char *recent_label_font_size;
 void set_icons_fonts_sizes();
 gboolean blur_background(const char *image, const char *bg_image);
 GdkPixbuf *create_app_name(const char *app_name, double font_size);
-GdkPixbuf *shadow_icon(GdkPixbuf *src_pix);
+GdkPixbuf *shadow_icon(GdkPixbuf *src_pix, const char *path);
 int app_name_comparator(GAppInfo *item1, GAppInfo *item2);
 
 #endif /* LAPPSUTIL_H */
