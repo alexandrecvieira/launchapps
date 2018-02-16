@@ -1,4 +1,13 @@
 
+2018-02-16  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* launchapps.c (lapps_app_list_remove_dup): Separate function to remove duplicates
+	* Improved functions: lapps_application_icon, lapps_create_table, lapps_app_list(remove duplicates)
+
+2018-02-15  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* Saving the icons for best performance(test)
+
 2018-02-11  Alexandre C Vieira <acamargo.vieira@gmail.com>
 
 	* launchapps.c (lapps_show_default_page): Added error icon for app not found
