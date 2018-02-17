@@ -59,6 +59,8 @@ GdkPixbuf *image_pix;
 GList *app_list;
 GList *recent_tmp;
 GList *table_list;
+GHashTable* icons_table;
+GHashTable* labels_table;
 gboolean running;
 gboolean filtered;
 int page_index;
@@ -229,9 +231,11 @@ static GtkWidget *lapps_create_table() {
 				(gpointer )test_list->data);
 		g_signal_connect(GTK_OBJECT(event_box), "button-release-event", G_CALLBACK(lapps_main_window_close), NULL);
 		gtk_box_pack_start(GTK_BOX(app_box),
-				gtk_image_new_from_pixbuf(lapps_application_icon(g_app_info_dup(test_list->data))), FALSE,
+				gtk_image_new_from_pixbuf(
+						(GdkPixbuf *) g_hash_table_find(icons_table, (GHRFunc) tables_finder, app_name)), FALSE,
 				FALSE, 0);
-		app_label = gtk_image_new_from_pixbuf(create_app_name(app_name, font_size));
+		app_label = gtk_image_new_from_pixbuf(
+				(GdkPixbuf *) g_hash_table_find(labels_table, (GHRFunc) tables_finder, app_name));
 		gtk_widget_set_size_request(app_label, app_label_width, app_label_height);
 		gtk_box_pack_start(GTK_BOX(app_box), app_label, FALSE, FALSE, 0);
 		gtk_table_attach(GTK_TABLE(this_table), event_box, j, j + 1, i, i + 1, GTK_SHRINK, GTK_FILL, 0, 0);
@@ -286,8 +290,10 @@ static GtkWidget *lapps_create_recent_frame(GList *recent_list) {
 				(gpointer )g_app_info_dup(test_list->data));
 		g_signal_connect(GTK_OBJECT(event_box), "button-release-event", G_CALLBACK(lapps_main_window_close), NULL);
 		gtk_box_pack_start(GTK_BOX(app_box),
-				gtk_image_new_from_pixbuf(lapps_application_icon(g_app_info_dup(test_list->data))), FALSE, FALSE, 0);
-		app_label = (GtkImage*) gtk_image_new_from_pixbuf(create_app_name(app_name, font_size));
+				gtk_image_new_from_pixbuf((GdkPixbuf *) g_hash_table_find(icons_table, (GHRFunc) tables_finder, app_name)), FALSE,
+				FALSE, 0);
+		app_label = (GtkImage*) gtk_image_new_from_pixbuf(
+				(GdkPixbuf *) g_hash_table_find(labels_table, (GHRFunc) tables_finder, app_name));
 		gtk_widget_set_size_request(GTK_WIDGET(app_label), app_label_width, app_label_height);
 		gtk_box_pack_start(GTK_BOX(app_box), GTK_WIDGET(app_label), FALSE, FALSE, 0);
 		gtk_box_pack_start(GTK_BOX(apps_vbox), event_box, TRUE, TRUE, 0);
@@ -847,6 +853,24 @@ static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
 	gtk_main();
 }
 
+static void lapps_tables_init(){
+	GList *test_list = NULL;
+	GdkPixbuf *icon = NULL;
+	GdkPixbuf *label = NULL;
+
+	filtered = FALSE;
+	lapps_app_list(NULL);
+	icons_table = g_hash_table_new(g_str_hash, g_str_equal);
+	labels_table = g_hash_table_new(g_str_hash, g_str_equal);
+
+	for (test_list = app_list; test_list != NULL; test_list = test_list->next) {
+		icon = lapps_application_icon(test_list->data);
+		label = create_app_name(g_app_info_get_name(test_list->data), font_size);
+		g_hash_table_insert(icons_table, g_strdup(g_app_info_get_name(test_list->data)), gdk_pixbuf_copy(icon));
+		g_hash_table_insert(labels_table, g_strdup(g_app_info_get_name(test_list->data)), gdk_pixbuf_copy(label));
+	}
+}
+
 static void lapps_button_clicked(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
 	LaunchAppsPlugin *lapps = (LaunchAppsPlugin*) user_data;
 	if (!running) {
@@ -965,6 +989,8 @@ static GtkWidget *lapps_constructor(LXPanel *panel, config_setting_t *settings) 
 	// check configuration diretory
 	if (!g_file_test(confdir, G_FILE_TEST_EXISTS & G_FILE_TEST_IS_DIR))
 		g_mkdir(confdir, 0700);
+
+	lapps_tables_init();
 
 	return p;
 }
