@@ -1,4 +1,8 @@
 
+2018-02-17  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* launchapps.c (lapps_tables_init): putting the images in memory to improve performance
+
 2018-02-16  Alexandre C Vieira <acamargo.vieira@gmail.com>
 
 	* launchapps.c (lapps_app_list_remove_dup): Separate function to remove duplicates

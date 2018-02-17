@@ -211,6 +211,8 @@ static GtkWidget *lapps_create_table() {
 	GtkWidget *event_box = NULL;
 	GtkWidget *app_label = NULL;
 	GtkWidget *this_table = NULL;
+	GdkPixbuf *icon = NULL;
+	GdkPixbuf *label = NULL;
 	GList *test_list = NULL;
 	char *app_name;
 
@@ -230,12 +232,20 @@ static GtkWidget *lapps_create_table() {
 		g_signal_connect(GTK_OBJECT(event_box), "button-press-event", G_CALLBACK(lapps_exec),
 				(gpointer )test_list->data);
 		g_signal_connect(GTK_OBJECT(event_box), "button-release-event", G_CALLBACK(lapps_main_window_close), NULL);
-		gtk_box_pack_start(GTK_BOX(app_box),
-				gtk_image_new_from_pixbuf(
-						(GdkPixbuf *) g_hash_table_find(icons_table, (GHRFunc) tables_finder, app_name)), FALSE,
-				FALSE, 0);
-		app_label = gtk_image_new_from_pixbuf(
-				(GdkPixbuf *) g_hash_table_find(labels_table, (GHRFunc) tables_finder, app_name));
+		icon = (GdkPixbuf *) g_hash_table_find(icons_table, (GHRFunc) tables_finder, app_name);
+		if (icon == NULL) {
+			gtk_box_pack_start(GTK_BOX(app_box),
+					gtk_image_new_from_pixbuf(lapps_application_icon(g_app_info_dup(test_list->data))), FALSE,
+					FALSE, 0);
+			g_hash_table_insert(icons_table, g_strdup(app_name), gdk_pixbuf_copy(icon));
+		} else
+			gtk_box_pack_start(GTK_BOX(app_box), gtk_image_new_from_pixbuf(icon), FALSE, FALSE, 0);
+		label = (GdkPixbuf *) g_hash_table_find(labels_table, (GHRFunc) tables_finder, app_name);
+		if (label == NULL) {
+			app_label = gtk_image_new_from_pixbuf(create_app_name(app_name, font_size));
+			g_hash_table_insert(labels_table, g_strdup(app_name), gdk_pixbuf_copy(label));
+		} else
+			app_label = gtk_image_new_from_pixbuf(label);
 		gtk_widget_set_size_request(app_label, app_label_width, app_label_height);
 		gtk_box_pack_start(GTK_BOX(app_box), app_label, FALSE, FALSE, 0);
 		gtk_table_attach(GTK_TABLE(this_table), event_box, j, j + 1, i, i + 1, GTK_SHRINK, GTK_FILL, 0, 0);
