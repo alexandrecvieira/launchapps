@@ -1,4 +1,8 @@
 
+2018-02-18  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* launchapps.c (lapps_icon_lookup, lapps_label_lookup): functions to get icons and labels
+
 2018-02-17  Alexandre C Vieira <acamargo.vieira@gmail.com>
 
 	* Pre-release: v2.0.0
