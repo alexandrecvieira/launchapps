@@ -1,6 +1,7 @@
 
 2018-02-17  Alexandre C Vieira <acamargo.vieira@gmail.com>
 
+	* Pre-release: v2.0.0
 	* launchapps.c (lapps_create_table): automatic update of tables: icons and labels
 	* launchapps.c (lapps_tables_init): putting the images in memory to improve performance
 
