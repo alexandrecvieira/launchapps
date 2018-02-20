@@ -56,9 +56,10 @@ GtkWidget *indicator;
 GtkWidget *indicator_fw;
 GtkWidget *indicator_rw;
 GdkPixbuf *image_pix;
-GList *app_list;
-GList *recent_tmp;
-GList *table_list;
+GList *app_list = NULL;
+GList *recent_tmp = NULL;
+GList *table_list = NULL;
+GList *test_list = NULL;
 GHashTable *icons_table;
 GHashTable *labels_table;
 gboolean running;
@@ -66,7 +67,7 @@ gboolean filtered;
 int page_index;
 int page_count;
 int app_count;
-char *confdir;
+const char *confdir;
 
 typedef struct {
 	LXPanel *panel;
@@ -81,6 +82,19 @@ typedef struct {
 // callback when window is to be closed
 static void lapps_main_window_close(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
 	gtk_widget_destroy(window);
+
+	g_list_free(app_list);
+	app_list = NULL;
+
+	g_list_free(recent_tmp);
+	recent_tmp = NULL;
+
+	g_list_free(table_list);
+	table_list = NULL;
+
+	g_list_free(test_list);
+	test_list = NULL;
+
 	running = FALSE;
 }
 
@@ -89,6 +103,9 @@ static void lapps_loadsave_recent(gboolean read) {
 	FILE *conf_file;
 
 	char *path = g_strconcat(confdir, CONFFILE, NULL);
+
+	g_list_free(test_list);
+	test_list = NULL;
 
 	if (read) {
 		conf_file = fopen(path, "r");
@@ -114,11 +131,9 @@ static void lapps_loadsave_recent(gboolean read) {
 			syslog(LOG_INFO, "Recent Applications: Conf File Write Error");
 			closelog();
 		} else {
-			GList *test_list = NULL;
 			for (test_list = recent_tmp; test_list != NULL; test_list = test_list->next) {
 				fputs(g_strdup(g_strconcat(test_list->data, "\n", NULL)), conf_file);
 			}
-			g_list_free(test_list);
 			fclose(conf_file);
 		}
 	}
@@ -914,7 +929,6 @@ static void lapps_destructor(gpointer user_data) {
 	g_free(lapps->image_test);
 	g_free(lapps->image);
 	g_free(lapps->version);
-	g_free(confdir);
 	g_free(lapps);
 }
 
@@ -968,9 +982,7 @@ static GtkWidget *lapps_constructor(LXPanel *panel, config_setting_t *settings) 
 	GtkWidget *icon_box;
 	const char *str;
 
-	char *home = g_strdup(fm_get_home_dir());
-	confdir = g_strconcat(home, CONFPATH, NULL);
-	g_free(home);
+	confdir = g_strconcat(fm_get_home_dir(), CONFPATH, NULL);
 
 	/* Load parameters from the configuration file. */
 	if (config_setting_lookup_string(settings, "image", &str))
