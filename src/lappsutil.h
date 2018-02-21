@@ -23,7 +23,6 @@
 
 #include <string.h>
 #include <gdk/gdk.h>
-#include <gdk/gdkx.h>
 #include <gtk/gtk.h>
 #include <gio/gio.h>
 #include <glib.h>

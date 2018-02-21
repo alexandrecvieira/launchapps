@@ -26,7 +26,8 @@ int s_height, s_width, grid[2];
 double screen_size_relation;
 char *recent_label_font_size;
 
-gboolean blur_background(const char *image, const char *bg_image) {
+gboolean blur_background(const char *image, const char *bg_image)
+{
 	MagickWand *inWand = NULL;
 	MagickWand *outWand = NULL;
 	MagickBooleanType status;
@@ -35,7 +36,8 @@ gboolean blur_background(const char *image, const char *bg_image) {
 	inWand = NewMagickWand();
 	status = MagickReadImage(inWand, image);
 
-	if (status == MagickFalse) {
+	if (status == MagickFalse)
+	{
 		inWand = DestroyMagickWand(inWand);
 		MagickWandTerminus();
 		return FALSE;
@@ -57,7 +59,8 @@ gboolean blur_background(const char *image, const char *bg_image) {
 	return TRUE;
 }
 
-GdkPixbuf *create_app_name(const char *app_name, double font_size) {
+GdkPixbuf *create_app_name(const char *app_name, double font_size)
+{
 	GdkPixbuf *bg_target_pix = NULL;
 	MagickWand *magick_wand = NULL;
 	MagickWand *c_wand = NULL;
@@ -71,7 +74,8 @@ GdkPixbuf *create_app_name(const char *app_name, double font_size) {
 	char **app_name_splited = g_strsplit(app_name, " ", -1);
 	char **ptr = NULL;
 	int i = 1;
-	for (ptr = app_name_splited; *ptr; ptr++) {
+	for (ptr = app_name_splited; *ptr; ptr++)
+	{
 		if (i == 1)
 			target_name = g_strconcat(*ptr, " ", NULL);
 		if (i > 1 && (i % 2) == 0)
@@ -80,6 +84,8 @@ GdkPixbuf *create_app_name(const char *app_name, double font_size) {
 			target_name = g_strconcat(target_name, *ptr, " ", NULL);
 		i++;
 	}
+
+	g_strfreev(app_name_splited);
 
 	MagickWandGenesis();
 	magick_wand = NewMagickWand();
@@ -135,7 +141,8 @@ GdkPixbuf *create_app_name(const char *app_name, double font_size) {
 	rowstride = gdk_pixbuf_get_rowstride(bg_target_pix);
 	MagickSetImageDepth(magick_wand, 32);
 
-	for (row = 0; row < height; row++) {
+	for (row = 0; row < height; row++)
+	{
 		guchar *data = pixels + row * rowstride;
 		MagickExportImagePixels(magick_wand, 0, row, width, 1, "RGBA", CharPixel, data);
 	}
@@ -155,7 +162,8 @@ GdkPixbuf *create_app_name(const char *app_name, double font_size) {
 	return bg_target_pix;
 }
 
-GdkPixbuf *shadow_icon(GdkPixbuf *src_pix, const char *path) {
+GdkPixbuf *shadow_icon(GdkPixbuf *src_pix, const char *path)
+{
 	GdkPixbuf *bg_target_pix = NULL;
 	size_t width, height;
 	int rowstride, row;
@@ -186,12 +194,13 @@ GdkPixbuf *shadow_icon(GdkPixbuf *src_pix, const char *path) {
 	pixels = gdk_pixbuf_get_pixels(bg_target_pix);
 	rowstride = gdk_pixbuf_get_rowstride(bg_target_pix);
 
-	for (row = 0; row < height; row++) {
+	for (row = 0; row < height; row++)
+	{
 		guchar *data = pixels + row * rowstride;
 		MagickExportImagePixels(dest_wand, 0, row, width, 1, "RGBA", CharPixel, data);
 	}
 
-	if(path != NULL)
+	if (path != NULL)
 		MagickWriteImage(dest_wand, path);
 
 	if (shadow)
@@ -208,35 +217,40 @@ GdkPixbuf *shadow_icon(GdkPixbuf *src_pix, const char *path) {
 	return bg_target_pix;
 }
 
-void set_icons_fonts_sizes() {
+void set_icons_fonts_sizes()
+{
 	GdkScreen *screen = gdk_screen_get_default();
 	s_height = gdk_screen_get_height(screen);
 	s_width = gdk_screen_get_width(screen);
 	screen_size_relation = (pow(s_width * s_height, ((double) (1.0 / 3.0))) / 1.6);
 
 	/*openlog("LaunchApps", LOG_PID | LOG_CONS, LOG_USER);
-	syslog(LOG_INFO, "Screen relation: w-%d x h-%d -> %f", s_width, s_height, screen_size_relation);
-	closelog();*/
+	 syslog(LOG_INFO, "Screen relation: w-%d x h-%d -> %f", s_width, s_height, screen_size_relation);
+	 closelog();*/
 
 	// common screen size resolution = suggested_size (s_width / s_height)
 	// 1024x768 = 57.689983 (~1.33) | 1280x800 = 62.996052 (1.6)   | 1280x1024 = 68.399038 (~1.24) | 1366x768  = 63.506375 (~1.77)
 	// 1440x900 = 68.142022 (1.6)   | 1600x900 = 70.577702 (~1.77) | 1680x1050 = 75.517258 (1.6)   | 1920x1080 = 79.699393 (~1.77)
-
-	if (screen_size_relation < 68) {
+	if (screen_size_relation < 68)
+	{
 		icon_size = 48;
 		font_size = 12;
 		recent_label_font_size = "x-small";
-	} else if (screen_size_relation >= 68 && screen_size_relation < 79) {
+	}
+	else if (screen_size_relation >= 68 && screen_size_relation < 79)
+	{
 		icon_size = 48;
 		font_size = 14;
 		recent_label_font_size = "small";
-	} else if (screen_size_relation >= 79) {
+	}
+	else if (screen_size_relation >= 79)
+	{
 		icon_size = 64;
 		font_size = 16;
 		recent_label_font_size = "medium";
 	}
 
-	if(screen_size_relation < 75)
+	if (screen_size_relation < 75)
 		app_label_height = 58;
 	else
 		app_label_height = 68;
@@ -253,20 +267,25 @@ void set_icons_fonts_sizes() {
 	indicator_height = (font_size * 2) + (font_size / 2);
 
 	/* grid[0] = rows | grid[1] = columns */
-	if (s_width > s_height) { // normal landscape orientation
+	if (s_width > s_height)
+	{ // normal landscape orientation
 		grid[0] = 4;
 		grid[1] = 5;
-	} else { // most likely a portrait orientation
+	}
+	else
+	{ // most likely a portrait orientation
 		grid[0] = 5;
 		grid[1] = 4;
 	}
 }
 
-int app_name_comparator(GAppInfo *item1, GAppInfo *item2) {
+int app_name_comparator(GAppInfo *item1, GAppInfo *item2)
+{
 	return g_ascii_strcasecmp(g_app_info_get_name(item1), g_app_info_get_name(item2));
 }
 
-gboolean tables_finder(gpointer key, gpointer value, gpointer user_data) {
-	char *app_name = (char *) user_data;
-	return g_strcmp0(key, app_name) == 0;
+gboolean tables_finder(gpointer key, gpointer value, gpointer user_data)
+{
+	const char *app_name = (char *) user_data;
+	return (g_strcmp0(key, app_name) == 0);
 }

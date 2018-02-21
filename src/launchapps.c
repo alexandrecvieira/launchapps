@@ -45,28 +45,22 @@
 #define CONFFILE "launchapps.recent"
 #define DEFAULTBG "launchapps-bg-default.jpg"
 
-typedef enum {
-	LA_NONE, LA_ICONIFY
-} WindowCommand;
-
-GtkWidget *window;
-GtkWidget *table;
-GtkWidget *table_fixed;
-GtkWidget *indicator;
-GtkWidget *indicator_fw;
-GtkWidget *indicator_rw;
-GdkPixbuf *image_pix;
+GtkWidget *window = NULL;
+GtkWidget *table = NULL;
+GtkWidget *table_fixed = NULL;
+GtkWidget *indicator = NULL;
+GtkWidget *indicator_fw = NULL;
+GtkWidget *indicator_rw = NULL;
+GdkPixbuf *image_pix = NULL;
 GList *app_list = NULL;
 GList *recent_tmp = NULL;
 GList *table_list = NULL;
-GList *test_list = NULL;
-GHashTable *icons_table;
-GHashTable *labels_table;
-gboolean running;
-gboolean filtered;
-int page_index;
-int page_count;
-int app_count;
+GHashTable *icons_table = NULL;
+GHashTable *labels_table = NULL;
+gboolean filtered = FALSE;
+int page_index = 0;
+int page_count = 0;
+int app_count = 0;
 const char *confdir;
 
 typedef struct {
@@ -80,22 +74,22 @@ typedef struct {
 } LaunchAppsPlugin;
 
 // callback when window is to be closed
-static void lapps_main_window_close(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
-	gtk_widget_destroy(window);
+static void lapps_main_window_close(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
+{
+	if (window != NULL)
+	{
+		gtk_widget_destroy(window);
+		window = NULL;
 
-	g_list_free(app_list);
-	app_list = NULL;
+		g_list_free(app_list);
+		app_list = NULL;
 
-	g_list_free(recent_tmp);
-	recent_tmp = NULL;
+		g_list_free(recent_tmp);
+		recent_tmp = NULL;
 
-	g_list_free(table_list);
-	table_list = NULL;
-
-	g_list_free(test_list);
-	test_list = NULL;
-
-	running = FALSE;
+		g_list_free(table_list);
+		table_list = NULL;
+	}
 }
 
 // load recent: read = TRUE | save recent: read = FALSE
@@ -103,9 +97,6 @@ static void lapps_loadsave_recent(gboolean read) {
 	FILE *conf_file;
 
 	char *path = g_strconcat(confdir, CONFFILE, NULL);
-
-	g_list_free(test_list);
-	test_list = NULL;
 
 	if (read) {
 		conf_file = fopen(path, "r");
@@ -120,7 +111,9 @@ static void lapps_loadsave_recent(gboolean read) {
 				len = strlen(data);
 				if (data[len - 1] == '\n')
 					data[len - 1] = '\0';
+				char *name = g_strdup(data);
 				recent_tmp = g_list_append(recent_tmp, g_strdup(data));
+				g_free(name);
 			}
 			fclose(conf_file);
 		}
@@ -131,10 +124,12 @@ static void lapps_loadsave_recent(gboolean read) {
 			syslog(LOG_INFO, "Recent Applications: Conf File Write Error");
 			closelog();
 		} else {
+			GList *test_list = NULL;
 			for (test_list = recent_tmp; test_list != NULL; test_list = test_list->next) {
 				fputs(g_strdup(g_strconcat(test_list->data, "\n", NULL)), conf_file);
 			}
 			fclose(conf_file);
+			g_list_free(test_list);
 		}
 	}
 
@@ -725,7 +720,7 @@ static gboolean lapps_match_completion_selected(GtkEntryCompletion *completion, 
 	return FALSE;
 }
 
-static void lapps_create_main_window(LaunchAppsPlugin *lapps) {
+static void lapps_create_main_window() {
 	indicator = NULL;
 	indicator_rw = NULL;
 	indicator_fw = NULL;
@@ -910,12 +905,20 @@ static void lapps_tables_init(){
 	}
 }
 
-static void lapps_button_clicked(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
-	LaunchAppsPlugin *lapps = (LaunchAppsPlugin*) user_data;
-	if (!running) {
-		running = TRUE;
-		lapps_create_main_window(lapps);
+static gboolean lapps_button_clicked(GtkWidget *widget, GdkEventButton *event, LXPanel *panel)
+{
+	if (event->button != 1)
+		return FALSE;
+
+	if (window == NULL)
+		lapps_create_main_window();
+	else
+	{
+		gtk_widget_destroy(window);
+		window = NULL;
 	}
+
+	return TRUE;
 }
 
 static void lapps_destructor(gpointer user_data) {
@@ -1011,7 +1014,7 @@ static GtkWidget *lapps_constructor(LXPanel *panel, config_setting_t *settings) 
 	lapps->icon_image = gtk_image_new_from_icon_name(LAPPSICON, lapps->panel->priv->icon_size);
 	gtk_widget_set_tooltip_text(lapps->icon_image, LAPPSNAME);
 
-	g_signal_connect(icon_box, "button_release_event", G_CALLBACK(lapps_button_clicked), (gpointer ) lapps);
+	//g_signal_connect(icon_box, "button_release_event", G_CALLBACK(lapps_button_clicked), (gpointer ) lapps);
 
 	gtk_container_add(GTK_CONTAINER(icon_box), lapps->icon_image);
 	gtk_widget_show(lapps->icon_image);
@@ -1021,8 +1024,6 @@ static GtkWidget *lapps_constructor(LXPanel *panel, config_setting_t *settings) 
 	set_icons_fonts_sizes();
 
 	page_index = 0;
-
-	running = FALSE;
 
 	// check configuration diretory
 	if (!g_file_test(confdir, G_FILE_TEST_EXISTS & G_FILE_TEST_IS_DIR))
@@ -1041,5 +1042,6 @@ LXPanelPluginInit fm_module_init_lxpanel_gtk = {
 		.description = "Application Launcher for LXPanel",
 		.new_instance = lapps_constructor,
 		.config = lapps_configure,
+		.button_press_event = lapps_button_clicked,
 		.one_per_system = 1
 };
