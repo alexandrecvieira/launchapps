@@ -26,7 +26,7 @@ int s_height, s_width, grid[2];
 double screen_size_relation;
 char *recent_label_font_size;
 
-gboolean blur_background(const char *image, const char *bg_image)
+gboolean blur_background(const char *image_path, const char *bg_image_path)
 {
 	MagickWand *inWand = NULL;
 	MagickWand *outWand = NULL;
@@ -34,7 +34,7 @@ gboolean blur_background(const char *image, const char *bg_image)
 
 	MagickWandGenesis();
 	inWand = NewMagickWand();
-	status = MagickReadImage(inWand, image);
+	status = MagickReadImage(inWand, image_path);
 
 	if (status == MagickFalse)
 	{
@@ -47,7 +47,7 @@ gboolean blur_background(const char *image, const char *bg_image)
 	MagickBlurImage(outWand, 0, 15);
 	MagickSetImageDepth(outWand, 32);
 
-	MagickWriteImage(outWand, bg_image);
+	MagickWriteImage(outWand, bg_image_path);
 
 	if (inWand)
 		inWand = DestroyMagickWand(inWand);

@@ -51,7 +51,7 @@ GtkWidget *table_fixed = NULL;
 GtkWidget *indicator = NULL;
 GtkWidget *indicator_fw = NULL;
 GtkWidget *indicator_rw = NULL;
-GdkPixbuf *image_pix = NULL;
+GdkPixbuf *bg_image_pix = NULL;
 GList *app_list = NULL;
 GList *recent_tmp = NULL;
 GList *table_list = NULL;
@@ -67,14 +67,13 @@ typedef struct {
 	LXPanel *panel;
 	config_setting_t *settings;
 	GtkWidget *icon_image;
-	char *image;
-	char *image_test;
-	char *bg_image;
+	char *image_path;
+	char *image_path_test;
 	char *version;
 } LaunchAppsPlugin;
 
 // callback when window is to be closed
-static void lapps_main_window_close(GtkWidget *widget, GdkEventButton *event, gpointer user_data) /***/
+static void lapps_main_window_close(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
 	if (main_window)
 	{
@@ -93,7 +92,7 @@ static void lapps_main_window_close(GtkWidget *widget, GdkEventButton *event, gp
 }
 
 // load recent: load = TRUE | save recent: load = FALSE
-static void lapps_loadsave_recent(gboolean load) /***/
+static void lapps_loadsave_recent(gboolean load)
 {
 	FILE *conf_file;
 
@@ -144,7 +143,7 @@ static void lapps_loadsave_recent(gboolean load) /***/
 	}
 }
 
-static void lapps_update_recent(const char *app_name) /***/
+static void lapps_update_recent(const char *app_name)
 {
 	if (g_list_length(recent_tmp) == 0)
 	{
@@ -205,7 +204,7 @@ static void lapps_update_recent(const char *app_name) /***/
 }
 
 // callback when application is to be run
-static void lapps_exec(GtkWidget *widget, GdkEventButton *event, gpointer user_data) /***/
+static void lapps_exec(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
 	GAppInfo *app = (GAppInfo *) user_data;
 	const char *app_name = g_app_info_get_name(app);
@@ -214,7 +213,7 @@ static void lapps_exec(GtkWidget *widget, GdkEventButton *event, gpointer user_d
 }
 
 // create application's icon and its shadow
-static GdkPixbuf *lapps_application_icon(GAppInfo *appinfo) /***/
+static GdkPixbuf *lapps_application_icon(GAppInfo *appinfo)
 {
 	GdkPixbuf *app_icon = NULL;
 	GdkPixbuf *icon = NULL;
@@ -251,7 +250,7 @@ static GdkPixbuf *lapps_application_icon(GAppInfo *appinfo) /***/
 	return icon;
 }
 
-static GdkPixbuf *lapps_icon_lookup(GAppInfo *app) /***/
+static GdkPixbuf *lapps_icon_lookup(GAppInfo *app)
 {
 	GdkPixbuf *icon = NULL;
 	const char *app_name = g_app_info_get_name(app);
@@ -267,7 +266,7 @@ static GdkPixbuf *lapps_icon_lookup(GAppInfo *app) /***/
 	return icon;
 }
 
-static GdkPixbuf *lapps_label_lookup(GAppInfo *app) /***/
+static GdkPixbuf *lapps_label_lookup(GAppInfo *app)
 {
 	GdkPixbuf *label = NULL;
 	const char *app_name = g_app_info_get_name(app);
@@ -284,7 +283,7 @@ static GdkPixbuf *lapps_label_lookup(GAppInfo *app) /***/
 }
 
 // create main table of applications
-static GtkWidget *lapps_create_table() /***/
+static GtkWidget *lapps_create_table()
 {
 	GtkWidget *app_box = NULL;
 	GtkWidget *event_box = NULL;
@@ -336,7 +335,7 @@ static GtkWidget *lapps_create_table() /***/
 }
 
 // create recent app bar
-static GtkWidget *lapps_create_recent_frame(GList *recent_list) /***/
+static GtkWidget *lapps_create_recent_frame(GList *recent_list)
 {
 	GtkWidget *app_box = NULL;
 	GtkWidget *event_box = NULL;
@@ -382,7 +381,7 @@ static GtkWidget *lapps_create_recent_frame(GList *recent_list) /***/
 }
 
 // remove duplicates
-static void lapps_app_list_remove_dup() /***/
+static void lapps_app_list_remove_dup()
 {
 	GList *test_list;
 	GList *item = NULL;
@@ -408,15 +407,16 @@ static void lapps_app_list_remove_dup() /***/
 }
 
 // list the applications to then create the main table and recent application bar
-static void lapps_app_list(const char *filter) /***/
+static void lapps_app_list(const char *filter)
 {
 	GList *test_list = NULL;
 	const char *app_info_name;
 	const char *app_info_description;
 	const char *app_info_id;
-	char *name = NULL;
-	char *description = NULL;
-	char *id = NULL;
+	char *name;
+	char *description;
+	char *id;
+	const char *filter_down;
 
 	GList *all_app_list = g_app_info_get_all();
 
@@ -425,6 +425,8 @@ static void lapps_app_list(const char *filter) /***/
 
 	if (filtered && strlen(filter) > 0)
 	{
+		filter_down = g_str_to_ascii(g_ascii_strdown(filter, -1), NULL);
+
 		for (test_list = all_app_list; test_list; test_list = test_list->next)
 		{
 			if (g_app_info_get_icon(test_list->data) && g_app_info_get_description(test_list->data)
@@ -436,12 +438,9 @@ static void lapps_app_list(const char *filter) /***/
 				description = g_str_to_ascii(g_ascii_strdown(app_info_description, -1), NULL);
 				app_info_id = g_app_info_get_id(test_list->data);
 				id = g_str_to_ascii(g_ascii_strdown(app_info_id, -1), NULL);
-				if (g_strrstr(name, g_str_to_ascii(g_ascii_strdown(filter, -1), NULL))
-								|| g_strrstr(description, g_str_to_ascii(g_ascii_strdown(filter, -1), NULL))
-								|| g_strrstr(id, g_str_to_ascii(g_ascii_strdown(filter, -1), NULL)))
+				if (g_strrstr(name, filter_down) || g_strrstr(description, filter_down) || g_strrstr(id, filter_down))
 				{
-					app_list = g_list_insert_sorted(app_list, test_list->data,
-									(GCompareFunc) app_name_comparator);
+					app_list = g_list_insert_sorted(app_list, test_list->data, (GCompareFunc) app_name_comparator);
 					app_count++;
 				}
 			}
@@ -470,7 +469,7 @@ static void lapps_app_list(const char *filter) /***/
 }
 
 // list the applications to then create the main table with app selected
-static void lapps_app_selected_list(const char *filter) /***/
+static void lapps_app_selected_list(const char *filter)
 {
 	GList *test_list = NULL;
 	const char *app_name;
@@ -505,7 +504,7 @@ static void lapps_app_selected_list(const char *filter) /***/
 }
 
 // calculates the number of pages
-static int lapps_pages() /***/
+static int lapps_pages()
 {
 	int total_page_itens = 0;
 	int pages = 0;
@@ -520,7 +519,7 @@ static int lapps_pages() /***/
 	return pages;
 }
 
-static void lapps_update_indicator_rw(gboolean border) /***/
+static void lapps_update_indicator_rw(gboolean border)
 {
 	char page_char[4];
 	int page = page_index;
@@ -551,7 +550,7 @@ static void lapps_update_indicator_rw(gboolean border) /***/
 	}
 }
 
-static void lapps_update_indicator_fw(gboolean border) /***/
+static void lapps_update_indicator_fw(gboolean border)
 {
 	char page_char[4];
 	int page = page_index;
@@ -579,14 +578,16 @@ static void lapps_update_indicator_fw(gboolean border) /***/
 	}
 }
 
-static void lapps_indicator_rw_hover(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+static void lapps_indicator_rw_hover(GtkWidget *widget, GdkEvent *event, gpointer user_data)
+{
 	if (event->type == GDK_ENTER_NOTIFY || event->type == GDK_BUTTON_PRESS || event->type == GDK_BUTTON_RELEASE)
 		lapps_update_indicator_rw(TRUE);
 	else
 		lapps_update_indicator_rw(FALSE);
 }
 
-static void lapps_indicator_fw_hover(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+static void lapps_indicator_fw_hover(GtkWidget *widget, GdkEvent *event, gpointer user_data)
+{
 	if (event->type == GDK_ENTER_NOTIFY || event->type == GDK_BUTTON_PRESS || event->type == GDK_BUTTON_RELEASE)
 		lapps_update_indicator_fw(TRUE);
 	else
@@ -603,6 +604,7 @@ static void lapps_clear()
 		gtk_widget_hide_all(test_list->data);
 	}
 
+	g_list_free(table_list);
 	table_list = NULL;
 	gtk_widget_draw(main_window, NULL);
 }
@@ -641,8 +643,10 @@ static void lapps_show_page(gboolean up)
 	gtk_widget_draw(main_window, NULL);
 }
 
-static gboolean lapps_on_key_press(GtkWidget *widget, GdkEventKey *event, gpointer user_data) {
-	switch (event->keyval) {
+static gboolean lapps_on_key_press(GtkWidget *widget, GdkEventKey *event, gpointer user_data)
+{
+	switch (event->keyval)
+	{
 	case GDK_KEY_Down:
 		(page_index > 0) ? page_index-- : 0;
 		(lapps_pages() > 1) ? lapps_show_page(FALSE) : 0;
@@ -664,8 +668,10 @@ static gboolean lapps_on_key_press(GtkWidget *widget, GdkEventKey *event, gpoint
 	return FALSE;
 }
 
-static gboolean lapps_on_mouse_scroll(GtkWidget *widget, GdkEventScroll *event, gpointer user_data) {
-	switch (event->direction) {
+static gboolean lapps_on_mouse_scroll(GtkWidget *widget, GdkEventScroll *event, gpointer user_data)
+{
+	switch (event->direction)
+	{
 	case GDK_SCROLL_DOWN:
 		(page_index > 0) ? page_index-- : 0;
 		(lapps_pages() > 1) ? lapps_show_page(FALSE) : 0;
@@ -683,17 +689,20 @@ static gboolean lapps_on_mouse_scroll(GtkWidget *widget, GdkEventScroll *event, 
 	return FALSE;
 }
 
-static void lapps_indicator_rw_clicked(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
+static void lapps_indicator_rw_clicked(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
+{
 	(page_index > 0) ? page_index-- : 0;
 	(lapps_pages() > 1) ? lapps_show_page(FALSE) : 0;
 }
 
-static void lapps_indicator_fw_clicked(GtkWidget *widget, GdkEventButton *event, gpointer user_data) {
+static void lapps_indicator_fw_clicked(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
+{
 	(page_index < lapps_pages()) ? page_index++ : 0;
 	(page_index < lapps_pages()) ? lapps_show_page(TRUE) : 0;
 }
 
-static void lapps_show_default_page(gboolean app_not_found, GtkEntry *entry) {
+static void lapps_show_default_page(gboolean app_not_found, GtkEntry *entry)
+{
 	if (app_not_found)
 		gtk_entry_set_icon_from_stock(GTK_ENTRY(entry), GTK_ENTRY_ICON_PRIMARY, GTK_STOCK_STOP);
 	else
@@ -704,57 +713,69 @@ static void lapps_show_default_page(gboolean app_not_found, GtkEntry *entry) {
 	lapps_show_page(TRUE);
 }
 
-static void lapps_search(GtkEntry *entry, GtkEntryIconPosition icon_pos, GdkEventButton *event, gpointer userdata) {
+static void lapps_search(GtkEntry *entry, GtkEntryIconPosition icon_pos, GdkEventButton *event, gpointer userdata)
+{
 	const char *filter = gtk_entry_get_text(entry);
 
 	page_index = 0;
 	page_count = 0;
 
-	if (GTK_ENTRY_ICON_SECONDARY == icon_pos) {
-		if (strlen(filter) > 0) {
+	if (GTK_ENTRY_ICON_SECONDARY == icon_pos)
+	{
+		if (strlen(filter) > 0)
+		{
 			filtered = TRUE;
 			gtk_entry_set_icon_from_stock(GTK_ENTRY(entry), GTK_ENTRY_ICON_PRIMARY, GTK_STOCK_CLEAR);
-			lapps_app_list(g_strdup(filter));
+			lapps_app_list(filter);
 			if (g_list_length(app_list) > 0)
 				lapps_show_page(TRUE);
 			else
 				lapps_show_default_page(TRUE, entry);
-		} else
+		}
+		else
 			lapps_show_default_page(FALSE, entry);
 	}
 
-	if (GTK_ENTRY_ICON_PRIMARY == icon_pos) {
+	if (GTK_ENTRY_ICON_PRIMARY == icon_pos)
+	{
 		gtk_entry_set_text(entry, "");
 		lapps_show_default_page(FALSE, entry);
 	}
 }
 
-static void lapps_search_(GtkEntry *entry, gpointer userdata) {
-	const char *filter = g_ascii_strdown(gtk_entry_get_text(entry), -1);
+static void lapps_search_(GtkEntry *entry, gpointer userdata)
+{
+	const char *filter = gtk_entry_get_text(entry);
 
 	page_index = 0;
 	page_count = 0;
 
-	if (strlen(filter) > 0) {
+	if (strlen(filter) > 0)
+	{
 		filtered = TRUE;
 		gtk_entry_set_icon_from_stock(GTK_ENTRY(entry), GTK_ENTRY_ICON_PRIMARY, GTK_STOCK_CLEAR);
-		lapps_app_list(g_strdup(filter));
+		lapps_app_list(filter);
 		if (g_list_length(app_list) > 0)
 			lapps_show_page(TRUE);
-		else {
+		else
+		{
 			lapps_show_default_page(TRUE, entry);
 		}
-	} else {
+	}
+	else
+	{
 		gtk_entry_set_text(entry, "");
 		lapps_show_default_page(FALSE, entry);
 	}
 }
 
-static void lapps_search_selected(const char *filter, GtkEntry *entry) {
+static void lapps_search_selected(const char *filter, GtkEntry *entry)
+{
 	page_index = 0;
 	page_count = 0;
 
-	if (strlen(filter) > 0) {
+	if (strlen(filter) > 0)
+	{
 		filtered = TRUE;
 		gtk_entry_set_icon_from_stock(GTK_ENTRY(entry), GTK_ENTRY_ICON_PRIMARY, GTK_STOCK_CLEAR);
 		lapps_app_selected_list(filter);
@@ -763,41 +784,40 @@ static void lapps_search_selected(const char *filter, GtkEntry *entry) {
 }
 
 static gboolean lapps_match_completion(GtkEntryCompletion *completion, const char *key, GtkTreeIter *iter,
-		gpointer user_data) {
+				gpointer user_data)
+{
 	GtkTreeModel *model = gtk_entry_completion_get_model(completion);
-	char *name;
-	char *description;
-	char *id;
+	const char *name;
+	const char *description;
+	const char *id;
 	gtk_tree_model_get(model, iter, 0, &name, 1, &description, 2, &id, -1);
-	char *tofind = g_str_to_ascii(g_ascii_strdown(key, -1), NULL);
+	const char *tofind = g_str_to_ascii(g_ascii_strdown(key, -1), NULL);
 	gboolean match = (g_strrstr(g_str_to_ascii(g_ascii_strdown(name, -1), NULL), tofind) == NULL ? FALSE : TRUE)
-			|| (g_strrstr(g_str_to_ascii(g_ascii_strdown(description, -1), NULL), key) == NULL ? FALSE : TRUE)
-			|| (g_strrstr(g_str_to_ascii(g_ascii_strdown(id, -1), NULL), key) == NULL ? FALSE : TRUE);
-	g_free(name);
-	g_free(description);
-	g_free(id);
+					|| (g_strrstr(g_str_to_ascii(g_ascii_strdown(description, -1), NULL), key) == NULL ? FALSE : TRUE)
+					|| (g_strrstr(g_str_to_ascii(g_ascii_strdown(id, -1), NULL), key) == NULL ? FALSE : TRUE);
 	return match;
 }
 
 static gboolean lapps_match_completion_selected(GtkEntryCompletion *completion, GtkTreeModel *model, GtkTreeIter *iter,
-		gpointer user_data) {
+				gpointer user_data)
+{
 	GtkEntry *entry = (GtkEntry *) user_data;
-	char *name;
-	char *description;
-	char *id;
+	const char *name;
+	const char *description;
+	const char *id;
 	gtk_tree_model_get(model, iter, 0, &name, 1, &description, 2, &id, -1);
-	lapps_search_selected(g_strdup(name), entry);
-	g_free(name);
-	g_free(description);
-	g_free(id);
+	lapps_search_selected(name, entry);
+
 	return FALSE;
 }
 
-static GtkWidget *lapps_create_main_window() {
+static GtkWidget *lapps_create_main_window()
+{
 	indicator = NULL;
 	indicator_rw = NULL;
 	indicator_fw = NULL;
 	table = NULL;
+	table_fixed = NULL;
 	app_list = NULL;
 	table_list = NULL;
 
@@ -825,9 +845,8 @@ static GtkWidget *lapps_create_main_window() {
 	GtkWidget *layout = gtk_layout_new(NULL, NULL);
 	gtk_layout_set_size(GTK_LAYOUT(layout), s_width, s_height);
 	gtk_container_add(GTK_CONTAINER(window), layout);
-	GdkPixbuf *target_image_pix = gdk_pixbuf_scale_simple(image_pix, s_width, s_height, GDK_INTERP_BILINEAR);
 	gtk_widget_show(layout);
-	GtkWidget *bg_image = gtk_image_new_from_pixbuf(target_image_pix);
+	GtkWidget *bg_image = gtk_image_new_from_pixbuf(bg_image_pix);
 	gtk_layout_put(GTK_LAYOUT(layout), bg_image, 0, 0);
 	gtk_widget_show(bg_image);
 
@@ -860,17 +879,17 @@ static GtkWidget *lapps_create_main_window() {
 	gtk_entry_completion_set_popup_set_width(completion, FALSE);
 	GtkListStore *store = gtk_list_store_new(3, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING);
 	GList *test_list = NULL;
-	for (test_list = app_list; test_list; test_list = test_list->next) {
+	for (test_list = app_list; test_list; test_list = test_list->next)
+	{
 		GtkTreeIter it;
 		gtk_list_store_append(store, &it);
-		gtk_list_store_set(store, &it, 0, g_strdup(g_app_info_get_name(test_list->data)), 1,
-				g_strdup(g_app_info_get_description(test_list->data)), 2, g_strdup(g_app_info_get_id(test_list->data)),
-				-1);
+		gtk_list_store_set(store, &it, 0, g_app_info_get_name(test_list->data), 1,
+						g_app_info_get_description(test_list->data), 2, g_app_info_get_id(test_list->data), -1);
 	}
 	gtk_entry_completion_set_model(completion, (GtkTreeModel *) store);
 	gtk_entry_completion_set_match_func(completion, (GtkEntryCompletionMatchFunc) lapps_match_completion, NULL, NULL);
 	g_signal_connect(GTK_ENTRY_COMPLETION (completion), "match-selected", G_CALLBACK (lapps_match_completion_selected),
-			(gpointer )entry);
+					(gpointer )entry);
 	g_object_unref(G_OBJECT(store));
 	gtk_entry_completion_set_text_column(completion, 0);
 	gtk_entry_set_completion(GTK_ENTRY(entry), completion);
@@ -883,11 +902,15 @@ static GtkWidget *lapps_create_main_window() {
 	g_list_free(recent_tmp);
 	recent_tmp = NULL;
 	lapps_loadsave_recent(TRUE);
-	if (recent_tmp && g_list_length(recent_tmp) > 0) {
-		for (test_recent_list = recent_tmp; test_recent_list; test_recent_list = test_recent_list->next) {
-			for (test_list = app_list; test_list; test_list = test_list->next) {
-				if (g_strcmp0(g_strdup(g_app_info_get_name(test_list->data)), test_recent_list->data) == 0) {
-					recent_list = g_list_append(recent_list, g_app_info_dup(test_list->data));
+	if (recent_tmp && g_list_length(recent_tmp) > 0)
+	{
+		for (test_recent_list = recent_tmp; test_recent_list; test_recent_list = test_recent_list->next)
+		{
+			for (test_list = app_list; test_list; test_list = test_list->next)
+			{
+				if (g_strcmp0(g_app_info_get_name(test_list->data), test_recent_list->data) == 0)
+				{
+					recent_list = g_list_append(recent_list, test_list->data);
 					break;
 				}
 			}
@@ -900,18 +923,21 @@ static GtkWidget *lapps_create_main_window() {
 	GtkWidget *table_align = gtk_alignment_new(0.5, 0.5, 0.0, 0.0);
 	table_fixed = gtk_fixed_new();
 	gtk_container_add(GTK_CONTAINER(table_align), table_fixed);
-	if (g_list_length(recent_list) > 0) {
+	if (g_list_length(recent_list) > 0)
+	{
 		gtk_widget_set_size_request(GTK_WIDGET(frame_vbox), app_label_width, (s_height - (screen_size_relation * 2)));
 		gtk_box_pack_start(GTK_BOX(frame_vbox), frame, FALSE, FALSE, 0);
 		gtk_box_pack_start(GTK_BOX(apps_hbox), frame_vbox, FALSE, FALSE, 0);
-	} else
+	}
+	else
 		gtk_widget_set_size_request(GTK_WIDGET(table_align), (s_width - screen_size_relation),
-				(s_height - (screen_size_relation * 2)));
+						(s_height - (screen_size_relation * 2)));
 	gtk_box_pack_start(GTK_BOX(apps_hbox), table_align, FALSE, FALSE, 0);
 	gtk_container_add(GTK_CONTAINER(apps_hbox_align), apps_hbox);
 	gtk_box_pack_start(GTK_BOX(main_vbox), apps_hbox_align, FALSE, FALSE, 0);
 	gtk_widget_show_all(apps_hbox_align);
 	lapps_show_page(TRUE);
+	g_list_free(recent_list);
 
 	// indicators
 	GtkWidget *indicators_hbox = gtk_hbox_new(FALSE, 0);
@@ -924,11 +950,11 @@ static GtkWidget *lapps_create_main_window() {
 	gtk_event_box_set_visible_window(GTK_EVENT_BOX(indicator_event_box), FALSE);
 	gtk_box_pack_start(GTK_BOX(indicators_hbox), indicator_event_box, FALSE, FALSE, 0);
 	g_signal_connect(GTK_OBJECT(indicator_event_box), "button-press-event", G_CALLBACK(lapps_indicator_rw_clicked),
-			NULL);
+					NULL);
 	g_signal_connect(GTK_OBJECT(indicator_event_box), "enter-notify-event", G_CALLBACK(lapps_indicator_rw_hover), NULL);
 	g_signal_connect(GTK_OBJECT(indicator_event_box), "leave-notify-event", G_CALLBACK(lapps_indicator_rw_hover), NULL);
 	g_signal_connect(GTK_OBJECT(indicator_event_box), "button-release-event", G_CALLBACK(lapps_indicator_rw_hover),
-			NULL);
+					NULL);
 	indicator = gtk_image_new();
 	gtk_widget_set_size_request(indicator, indicator_width, indicator_height);
 	gtk_box_pack_start(GTK_BOX(indicators_hbox), indicator, FALSE, FALSE, 0);
@@ -939,11 +965,11 @@ static GtkWidget *lapps_create_main_window() {
 	gtk_event_box_set_visible_window(GTK_EVENT_BOX(indicator_event_box), FALSE);
 	gtk_box_pack_start(GTK_BOX(indicators_hbox), indicator_event_box, FALSE, FALSE, 0);
 	g_signal_connect(GTK_OBJECT(indicator_event_box), "button-press-event", G_CALLBACK(lapps_indicator_fw_clicked),
-			NULL);
+					NULL);
 	g_signal_connect(GTK_OBJECT(indicator_event_box), "enter-notify-event", G_CALLBACK(lapps_indicator_fw_hover), NULL);
 	g_signal_connect(GTK_OBJECT(indicator_event_box), "leave-notify-event", G_CALLBACK(lapps_indicator_fw_hover), NULL);
 	g_signal_connect(GTK_OBJECT(indicator_event_box), "button-release-event", G_CALLBACK(lapps_indicator_fw_hover),
-			NULL);
+					NULL);
 	gtk_container_add(GTK_CONTAINER(indicators_align), indicators_hbox);
 	gtk_box_pack_start(GTK_BOX(main_vbox), indicators_align, FALSE, FALSE, 0);
 	gtk_widget_show_all(indicators_align);
@@ -954,10 +980,9 @@ static GtkWidget *lapps_create_main_window() {
 }
 
 // load first page at plugin startup
-static void lapps_tables_init(){
+static void lapps_tables_init()
+{
 	GList *test_list = NULL;
-	GdkPixbuf *icon = NULL;
-	GdkPixbuf *label = NULL;
 	const char *app_name;
 
 	filtered = FALSE;
@@ -966,14 +991,13 @@ static void lapps_tables_init(){
 	labels_table = g_hash_table_new(g_str_hash, g_str_equal);
 
 	int i = 0;
-	for (test_list = app_list; test_list; test_list = test_list->next) {
+	for (test_list = app_list; test_list; test_list = test_list->next)
+	{
 		app_name = g_app_info_get_name(test_list->data);
-		icon = lapps_application_icon(test_list->data);
-		label = create_app_name(g_strdup(app_name), font_size);
-		g_hash_table_insert(icons_table, g_strdup(app_name), gdk_pixbuf_copy(icon));
-		g_hash_table_insert(labels_table, g_strdup(app_name), gdk_pixbuf_copy(label));
+		g_hash_table_insert(icons_table, g_strdup(app_name), lapps_icon_lookup(test_list->data));
+		g_hash_table_insert(labels_table, g_strdup(app_name), lapps_label_lookup(test_list->data));
 		i++;
-		if(i == (grid[0] * grid[1]))
+		if (i == (grid[0] * grid[1]))
 			break;
 	}
 }
@@ -994,66 +1018,69 @@ static gboolean lapps_button_clicked(GtkWidget *widget, GdkEventButton *event, L
 	return TRUE;
 }
 
-static void lapps_destructor(gpointer user_data) {
+static void lapps_destructor(gpointer user_data)
+{
 	LaunchAppsPlugin *lapps = (LaunchAppsPlugin *) user_data;
 	g_list_free(app_list);
 	g_list_free(recent_tmp);
 	g_list_free(table_list);
-	g_hash_table_destroy (icons_table);
-	g_hash_table_destroy (labels_table);
-	g_object_unref(image_pix);
-	g_free(lapps->bg_image);
-	g_free(lapps->image_test);
-	g_free(lapps->image);
+	g_hash_table_destroy(icons_table);
+	g_hash_table_destroy(labels_table);
+	g_free(lapps->image_path);
 	g_free(lapps->version);
 	g_free(lapps);
 }
 
 /* Callback when the configuration dialog has recorded a configuration change. */
-static gboolean lapps_apply_configuration(gpointer user_data) {
+static gboolean lapps_apply_configuration(gpointer user_data)
+{
+	GdkPixbuf *image_pix = NULL;
 	GtkWidget *p = user_data;
 	LaunchAppsPlugin *lapps = lxpanel_plugin_get_data(p);
+	const char *bg_path = g_strconcat(confdir, BG, NULL);
+	const char *bg_default_path = g_strconcat(IMAGEPATH, DEFAULTBG, NULL);
 
-	lapps->bg_image = g_strconcat(IMAGEPATH, DEFAULTBG, NULL);
-
-	if (lapps->image) {
-		lapps->bg_image = g_strconcat(confdir, BG, NULL);
-		gboolean blurred = blur_background(lapps->image, lapps->bg_image);
-		if (!blurred)
-			lapps->bg_image = g_strconcat(IMAGEPATH, DEFAULTBG, NULL);
+	if (lapps->image_path == NULL)
+		image_pix = gdk_pixbuf_new_from_file(bg_default_path, NULL);
+	else
+	{
+		if (g_strcmp0(lapps->image_path, lapps->image_path_test) == 0)
+			image_pix = gdk_pixbuf_new_from_file(bg_path, NULL);
+		else
+		{
+			gboolean blurred = blur_background(lapps->image_path, bg_path);
+			if (blurred)
+				image_pix = gdk_pixbuf_new_from_file(bg_path, NULL);
+			else
+				image_pix = gdk_pixbuf_new_from_file(bg_default_path, NULL);
+		}
 	}
 
-	image_pix = gdk_pixbuf_new_from_file(g_strdup(lapps->bg_image), NULL);
+	bg_image_pix = gdk_pixbuf_scale_simple(image_pix, s_width, s_height, GDK_INTERP_BILINEAR);
 
-	config_group_set_string(lapps->settings, "image", lapps->image);
-	config_group_set_string(lapps->settings, "image_test", lapps->image_test);
+	g_object_unref(image_pix);
+
+	config_group_set_string(lapps->settings, "image_path", lapps->image_path);
+	lapps->image_path_test = g_strdup(lapps->image_path);
 
 	return FALSE;
 }
 
-static void lapps_configuration(gpointer user_data) {
-	GtkWidget *p = user_data;
-	LaunchAppsPlugin *lapps = lxpanel_plugin_get_data(p);
-
-	if (lapps->image)
-		lapps->bg_image = g_strconcat(confdir, BG, NULL);
-
-	image_pix = gdk_pixbuf_new_from_file(g_strdup(lapps->bg_image), NULL);
-}
-
 /* Callback when the configuration dialog is to be shown. */
-static GtkWidget *lapps_configure(LXPanel *panel, GtkWidget *p) {
+static GtkWidget *lapps_configure(LXPanel *panel, GtkWidget *p)
+{
 	LaunchAppsPlugin *lapps = lxpanel_plugin_get_data(p);
 	return lxpanel_generic_config_dlg("Application Launcher", panel, lapps_apply_configuration, p,
 			lapps->version, NULL, CONF_TYPE_TRIM,
 			" Application Launcher ", NULL, CONF_TYPE_TRIM,
 			"Copyright (C) 2017", NULL, CONF_TYPE_TRIM,
 			" ", NULL, CONF_TYPE_TRIM,
-			"Background image", &lapps->image, CONF_TYPE_FILE_ENTRY,
+			"Background image", &lapps->image_path, CONF_TYPE_FILE_ENTRY,
 			NULL);
 }
 
-static GtkWidget *lapps_constructor(LXPanel *panel, config_setting_t *settings) {
+static GtkWidget *lapps_constructor(LXPanel *panel, config_setting_t *settings)
+{
 	LaunchAppsPlugin *lapps = g_new0(LaunchAppsPlugin, 1);
 	GtkWidget *p;
 	GtkWidget *icon_box;
@@ -1062,24 +1089,23 @@ static GtkWidget *lapps_constructor(LXPanel *panel, config_setting_t *settings) 
 	confdir = g_strconcat(fm_get_home_dir(), CONFPATH, NULL);
 
 	/* Load parameters from the configuration file. */
-	if (config_setting_lookup_string(settings, "image", &str))
-		lapps->image = g_strdup(str);
-	if (config_setting_lookup_string(settings, "image_test", &str))
-		lapps->image_test = g_strdup(str);
+	if (config_setting_lookup_string(settings, "image_path", &str))
+		lapps->image_path = g_strdup(str);
+
+	if (lapps->image_path == NULL)
+		lapps->image_path_test = NULL;
+	else
+		lapps->image_path_test = g_strdup(lapps->image_path);
 
 	lapps->panel = panel;
 	lapps->settings = settings;
 
-	lapps->bg_image = g_strconcat(IMAGEPATH, DEFAULTBG, NULL);
-
 	g_return_val_if_fail(lapps != NULL, 0);
 
 	p = panel_icon_grid_new(panel_get_orientation(panel), panel_get_icon_size(panel), panel_get_icon_size(panel), 1, 0,
-			panel_get_height(panel));
+					panel_get_height(panel));
 
 	lxpanel_plugin_set_data(p, lapps, lapps_destructor);
-
-	lapps_configuration(p);
 
 	icon_box = gtk_event_box_new();
 	gtk_container_add(GTK_CONTAINER(p), icon_box);
@@ -1094,6 +1120,7 @@ static GtkWidget *lapps_constructor(LXPanel *panel, config_setting_t *settings) 
 	lapps->version = g_strconcat("LaunchApps ", VERSION, NULL);
 
 	set_icons_fonts_sizes();
+	lapps_apply_configuration(p);
 
 	page_index = 0;
 
