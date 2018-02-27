@@ -20,11 +20,11 @@
 
 #include "lappsutil.h"
 
-int icon_size, font_size, app_label_width, app_label_height;
+int icon_size, font_size, app_label_width, app_label_height, apps_table_width, apps_table_height;
 int indicator_font_size, indicator_width, indicator_height;
-int s_height, s_width, grid[2];
+int s_height, s_width, grid[2], main_vbox_border_width;
 double screen_size_relation;
-char *recent_label_font_size;
+const char *recent_label_font_size;
 
 gboolean blur_background(const char *image_path, const char *bg_image_path)
 {
@@ -265,6 +265,9 @@ void set_icons_fonts_sizes()
 	indicator_font_size = font_size * 2;
 	indicator_width = font_size * 2;
 	indicator_height = (font_size * 2) + (font_size / 2);
+	main_vbox_border_width = screen_size_relation / 2;
+	apps_table_height = s_height - (screen_size_relation * 2);
+	apps_table_width = s_width - screen_size_relation;
 
 	/* grid[0] = rows | grid[1] = columns */
 	if (s_width > s_height)

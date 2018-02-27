@@ -1,4 +1,21 @@
 
+2018-02-23  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* Code optimizations done
+
+2018-02-22  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* Code revision
+
+2018-02-21  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* Code revision
+
+2018-02-20  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* Code revision
+	* Gdk headers
+
 2018-02-18  Alexandre C Vieira <acamargo.vieira@gmail.com>
 
 	* launchapps.c (lapps_icon_lookup, lapps_label_lookup): functions to get icons and labels
