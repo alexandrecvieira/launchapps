@@ -51,7 +51,6 @@ GtkWidget *table_fixed = NULL;
 GtkWidget *indicator = NULL;
 GtkWidget *indicator_fw = NULL;
 GtkWidget *indicator_rw = NULL;
-GdkPixbuf *bg_image_pix = NULL;
 GList *app_list = NULL;
 GList *recent_tmp = NULL;
 GList *table_list = NULL;
@@ -62,6 +61,7 @@ int page_index = 0;
 int page_count = 0;
 int app_count = 0;
 const char *confdir;
+char *bg_image_path;
 
 typedef struct {
 	LXPanel *panel;
@@ -75,20 +75,11 @@ typedef struct {
 // callback when window is to be closed
 static void lapps_main_window_close(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
 {
-	if (main_window)
-	{
-		gtk_widget_destroy(main_window);
-		main_window = NULL;
-
-		g_list_free(app_list);
-		app_list = NULL;
-
-		g_list_free(recent_tmp);
-		recent_tmp = NULL;
-
-		g_list_free(table_list);
-		table_list = NULL;
-	}
+	g_slice_free1(sizeof(GList), app_list);
+	g_slice_free1(sizeof(GList), table_list);
+	g_slice_free1(sizeof(GList), recent_tmp);
+	gtk_widget_destroy(main_window);
+	main_window = NULL;
 }
 
 // load recent: load = TRUE | save recent: load = FALSE
@@ -239,10 +230,10 @@ static GdkPixbuf *lapps_application_icon(GAppInfo *appinfo)
 		icon = gdk_pixbuf_scale_simple(icon_tmp, icon_size, icon_size, GDK_INTERP_BILINEAR);
 
 	if (app_icon)
-		g_object_unref(app_icon);
+		g_object_unref(G_OBJECT(app_icon));
 
 	if (icon_tmp)
-		g_object_unref(icon_tmp);
+		g_object_unref(G_OBJECT(icon_tmp));
 
 	if (icon_info)
 		gtk_icon_info_free(icon_info);
@@ -598,14 +589,15 @@ static void lapps_clear()
 {
 	GList *test_list = NULL;
 
+	gtk_widget_destroy(GTK_WIDGET(table));
 	table = NULL;
+
 	for (test_list = table_list; test_list; test_list = test_list->next)
-	{
-		gtk_widget_hide_all(test_list->data);
-	}
+		gtk_widget_destroy(GTK_WIDGET(test_list->data));
 
 	g_list_free(table_list);
 	table_list = NULL;
+
 	gtk_widget_draw(main_window, NULL);
 }
 
@@ -818,7 +810,8 @@ static GtkWidget *lapps_create_main_window()
 	indicator_fw = NULL;
 	table = NULL;
 	table_fixed = NULL;
-	app_list = NULL;
+
+	table_list = g_slice_alloc(sizeof(GList));
 	table_list = NULL;
 
 	// populates the global list of applications
@@ -846,14 +839,18 @@ static GtkWidget *lapps_create_main_window()
 	gtk_layout_set_size(GTK_LAYOUT(layout), s_width, s_height);
 	gtk_container_add(GTK_CONTAINER(window), layout);
 	gtk_widget_show(layout);
-	GtkWidget *bg_image = gtk_image_new_from_pixbuf(bg_image_pix);
+	GdkPixbuf *image_pix = gdk_pixbuf_new_from_file(bg_image_path, NULL);
+	GdkPixbuf *image_pix_scaled = gdk_pixbuf_scale_simple(image_pix, s_width, s_height, GDK_INTERP_BILINEAR);
+	GtkWidget *bg_image = gtk_image_new_from_pixbuf(image_pix_scaled);
 	gtk_layout_put(GTK_LAYOUT(layout), bg_image, 0, 0);
 	gtk_widget_show(bg_image);
+	g_object_unref(image_pix);
+	g_object_unref(image_pix_scaled);
 
 	// main vbox for applications
 	GtkWidget *main_vbox = gtk_vbox_new(FALSE, 0);
 	gtk_widget_set_size_request(main_vbox, s_width, s_height);
-	gtk_container_set_border_width(GTK_CONTAINER(main_vbox), (screen_size_relation / 2));
+	gtk_container_set_border_width(GTK_CONTAINER(main_vbox), main_vbox_border_width);
 	gtk_container_add(GTK_CONTAINER(layout), main_vbox);
 	gtk_widget_show(main_vbox);
 
@@ -897,9 +894,10 @@ static GtkWidget *lapps_create_main_window()
 	g_object_unref(G_OBJECT(completion));
 
 	// recent applications and table ***********************************************
-	GList *recent_list = NULL;
+	GList *recent_list = g_slice_alloc(sizeof(GList));
+	recent_list = NULL;
 	GList *test_recent_list = NULL;
-	g_list_free(recent_tmp);
+	recent_tmp = g_slice_alloc(sizeof(GList));
 	recent_tmp = NULL;
 	lapps_loadsave_recent(TRUE);
 	if (recent_tmp && g_list_length(recent_tmp) > 0)
@@ -925,19 +923,18 @@ static GtkWidget *lapps_create_main_window()
 	gtk_container_add(GTK_CONTAINER(table_align), table_fixed);
 	if (g_list_length(recent_list) > 0)
 	{
-		gtk_widget_set_size_request(GTK_WIDGET(frame_vbox), app_label_width, (s_height - (screen_size_relation * 2)));
+		gtk_widget_set_size_request(GTK_WIDGET(frame_vbox), app_label_width, apps_table_height);
 		gtk_box_pack_start(GTK_BOX(frame_vbox), frame, FALSE, FALSE, 0);
 		gtk_box_pack_start(GTK_BOX(apps_hbox), frame_vbox, FALSE, FALSE, 0);
 	}
 	else
-		gtk_widget_set_size_request(GTK_WIDGET(table_align), (s_width - screen_size_relation),
-						(s_height - (screen_size_relation * 2)));
+		gtk_widget_set_size_request(GTK_WIDGET(table_align), apps_table_width, apps_table_height);
 	gtk_box_pack_start(GTK_BOX(apps_hbox), table_align, FALSE, FALSE, 0);
 	gtk_container_add(GTK_CONTAINER(apps_hbox_align), apps_hbox);
 	gtk_box_pack_start(GTK_BOX(main_vbox), apps_hbox_align, FALSE, FALSE, 0);
 	gtk_widget_show_all(apps_hbox_align);
 	lapps_show_page(TRUE);
-	g_list_free(recent_list);
+	g_slice_free1(sizeof(GList), recent_list);
 
 	// indicators
 	GtkWidget *indicators_hbox = gtk_hbox_new(FALSE, 0);
@@ -983,6 +980,7 @@ static GtkWidget *lapps_create_main_window()
 static void lapps_tables_init()
 {
 	GList *test_list = NULL;
+	app_list = g_slice_alloc(sizeof(GList));
 	const char *app_name;
 
 	filtered = FALSE;
@@ -1009,11 +1007,6 @@ static gboolean lapps_button_clicked(GtkWidget *widget, GdkEventButton *event, L
 
 	if (main_window == NULL)
 		main_window = lapps_create_main_window();
-	else
-	{
-		gtk_widget_destroy(main_window);
-		main_window = NULL;
-	}
 
 	return TRUE;
 }
@@ -1021,11 +1014,11 @@ static gboolean lapps_button_clicked(GtkWidget *widget, GdkEventButton *event, L
 static void lapps_destructor(gpointer user_data)
 {
 	LaunchAppsPlugin *lapps = (LaunchAppsPlugin *) user_data;
-	g_list_free(app_list);
-	g_list_free(recent_tmp);
-	g_list_free(table_list);
 	g_hash_table_destroy(icons_table);
 	g_hash_table_destroy(labels_table);
+	g_free(bg_image_path);
+	if (main_window != NULL)
+		gtk_widget_destroy(main_window);
 	g_free(lapps->image_path);
 	g_free(lapps->version);
 	g_free(lapps);
@@ -1034,36 +1027,26 @@ static void lapps_destructor(gpointer user_data)
 /* Callback when the configuration dialog has recorded a configuration change. */
 static gboolean lapps_apply_configuration(gpointer user_data)
 {
-	GdkPixbuf *image_pix = NULL;
 	GtkWidget *p = user_data;
 	LaunchAppsPlugin *lapps = lxpanel_plugin_get_data(p);
 	const char *bg_path = g_strconcat(confdir, BG, NULL);
 	const char *bg_default_path = g_strconcat(IMAGEPATH, DEFAULTBG, NULL);
 
 	if (lapps->image_path == NULL)
-		image_pix = gdk_pixbuf_new_from_file(bg_default_path, NULL);
+		bg_image_path = g_strdup(bg_default_path);
 	else
 	{
-		if (g_strcmp0(lapps->image_path, lapps->image_path_test) == 0)
-			image_pix = gdk_pixbuf_new_from_file(bg_path, NULL);
+		if (g_strcmp0(lapps->image_path_test, lapps->image_path) == 0)
+			bg_image_path = g_strdup(bg_path);
 		else
 		{
 			gboolean blurred = blur_background(lapps->image_path, bg_path);
 			if (blurred)
-				image_pix = gdk_pixbuf_new_from_file(bg_path, NULL);
-			else
-				image_pix = gdk_pixbuf_new_from_file(bg_default_path, NULL);
+				bg_image_path = g_strdup(bg_path);
 		}
 	}
 
-	bg_image_pix = gdk_pixbuf_scale_simple(image_pix, s_width, s_height, GDK_INTERP_BILINEAR);
-
-	g_object_unref(image_pix);
-
-	config_group_set_string(lapps->settings, "image_path", lapps->image_path);
-	lapps->image_path_test = g_strdup(lapps->image_path);
-
-	return FALSE;
+	return TRUE;
 }
 
 /* Callback when the configuration dialog is to be shown. */
@@ -1121,8 +1104,6 @@ static GtkWidget *lapps_constructor(LXPanel *panel, config_setting_t *settings)
 
 	set_icons_fonts_sizes();
 	lapps_apply_configuration(p);
-
-	page_index = 0;
 
 	// check configuration diretory
 	if (!g_file_test(confdir, G_FILE_TEST_EXISTS & G_FILE_TEST_IS_DIR))

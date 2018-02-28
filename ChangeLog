@@ -1,4 +1,8 @@
 
+2018-02-27  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* Changed char to const char
+
 2018-02-23  Alexandre C Vieira <acamargo.vieira@gmail.com>
 
 	* Code optimizations done
