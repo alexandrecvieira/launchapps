@@ -158,9 +158,11 @@ static void lapps_update_recent(const char *app_name)
 		// recent_list contains item
 		if (exists == 1)
 		{
-			GList *item = g_list_nth(recent_tmp, item_position);
+			GList *item = g_slice_alloc(sizeof(GList));
+			item = g_list_nth(recent_tmp, item_position);
 			recent_tmp = g_list_remove_link(recent_tmp, item);
-			g_list_free_1(item);
+			//g_list_free_1(item);
+			g_slice_free1(sizeof(GList), item);
 			recent_tmp = g_list_prepend(recent_tmp, g_strdup(app_name));
 			lapps_loadsave_recent(FALSE);
 		}
@@ -175,9 +177,11 @@ static void lapps_update_recent(const char *app_name)
 		{
 			if (g_list_length(recent_tmp) > 5)
 			{
-				GList *item = g_list_last(recent_tmp);
+				GList *item = g_slice_alloc(sizeof(GList));
+				item = g_list_last(recent_tmp);
 				recent_tmp = g_list_remove_link(recent_tmp, item);
-				g_list_free_1(item);
+				//g_list_free_1(item);
+				g_slice_free1(sizeof(GList), item);
 				lapps_loadsave_recent(FALSE);
 			}
 		}
@@ -185,9 +189,11 @@ static void lapps_update_recent(const char *app_name)
 		{
 			if (g_list_length(recent_tmp) > 6)
 			{
-				GList *item = g_list_last(recent_tmp);
+				GList *item = g_slice_alloc(sizeof(GList));
+				item = g_list_last(recent_tmp);
 				recent_tmp = g_list_remove_link(recent_tmp, item);
-				g_list_free_1(item);
+				//g_list_free_1(item);
+				g_slice_free1(sizeof(GList), item);
 				lapps_loadsave_recent(FALSE);
 			}
 		}
