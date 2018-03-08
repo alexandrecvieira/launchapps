@@ -44,6 +44,5 @@ gboolean blur_background(const char *image, const char *bg_image);
 GdkPixbuf *create_app_name(const char *app_name, double font_size);
 GdkPixbuf *shadow_icon(GdkPixbuf *src_pix, const char *path);
 int app_name_comparator(GAppInfo *item1, GAppInfo *item2);
-gboolean tables_finder(gpointer key, gpointer value, gpointer user_data);
 
 #endif /* LAPPSUTIL_H */

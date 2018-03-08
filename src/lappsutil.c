@@ -286,9 +286,3 @@ int app_name_comparator(GAppInfo *item1, GAppInfo *item2)
 {
 	return g_ascii_strcasecmp(g_app_info_get_name(item1), g_app_info_get_name(item2));
 }
-
-gboolean tables_finder(gpointer key, gpointer value, gpointer user_data)
-{
-	const char *app_name = (char *) user_data;
-	return (g_strcmp0(key, app_name) == 0);
-}
