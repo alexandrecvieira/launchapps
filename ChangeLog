@@ -1,6 +1,7 @@
 
 2018-03-09  Alexandre C Vieira <acamargo.vieira@gmail.com>
 
+	* launchapps.c (lapps_apply_configuration): Saving settings
 	* Some changes in code and changed plugin button tip
 
 2018-03-08  Alexandre C Vieira <acamargo.vieira@gmail.com>

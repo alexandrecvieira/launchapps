@@ -852,13 +852,9 @@ static void lapps_create_main_window()
 	gtk_layout_set_size(GTK_LAYOUT(layout), s_width, s_height);
 	gtk_container_add(GTK_CONTAINER(main_window), layout);
 	gtk_widget_show(layout);
-	GdkPixbuf *image_pix = gdk_pixbuf_new_from_file(bg_image_path, NULL);
-	GdkPixbuf *image_pix_scaled = gdk_pixbuf_scale_simple(image_pix, s_width, s_height, GDK_INTERP_BILINEAR);
-	GtkWidget *bg_image = gtk_image_new_from_pixbuf(image_pix_scaled);
+	GtkWidget *bg_image = gtk_image_new_from_file(bg_image_path);
 	gtk_layout_put(GTK_LAYOUT(layout), bg_image, 0, 0);
 	gtk_widget_show(bg_image);
-	g_object_unref(G_OBJECT(image_pix));
-	g_object_unref(G_OBJECT(image_pix_scaled));
 
 	// main vbox for applications
 	GtkWidget *main_vbox = gtk_vbox_new(FALSE, 0);
@@ -1043,18 +1039,14 @@ static gboolean lapps_apply_configuration(gpointer user_data)
 	const char *bg_path = g_strconcat(confdir, BG, NULL);
 	const char *bg_default_path = g_strconcat(IMAGEPATH, DEFAULTBG, NULL);
 
-	if (lapps->image_path == NULL)
-		bg_image_path = g_strdup(bg_default_path);
-	else
+	bg_image_path = g_strdup(bg_path);
+
+	if (g_strcmp0(lapps->image_path_test, lapps->image_path) != 0)
 	{
-		if (g_strcmp0(lapps->image_path_test, lapps->image_path) == 0)
-			bg_image_path = g_strdup(bg_path);
+		if (lapps->image_path == NULL)
+			blur_background(bg_default_path, bg_path);
 		else
-		{
-			gboolean blurred = blur_background(lapps->image_path, bg_path);
-			if (blurred)
-				bg_image_path = g_strdup(bg_path);
-		}
+			blur_background(lapps->image_path, bg_path);
 	}
 
 	config_group_set_string(lapps->settings, "image_path", lapps->image_path);

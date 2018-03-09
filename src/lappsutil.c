@@ -47,6 +47,8 @@ gboolean blur_background(const char *image_path, const char *bg_image_path)
 	MagickBlurImage(outWand, 0, 15);
 	MagickSetImageDepth(outWand, 32);
 
+	MagickAdaptiveResizeImage(outWand, s_width, s_height);
+
 	MagickWriteImage(outWand, bg_image_path);
 
 	if (inWand)
