@@ -1,6 +1,7 @@
 
 2018-03-09  Alexandre C Vieira <acamargo.vieira@gmail.com>
 
+	* launchapps.c (lapps_apply_configuration): Improvement for background
 	* launchapps.c (lapps_apply_configuration): Saving settings
 	* Some changes in code and changed plugin button tip
 
