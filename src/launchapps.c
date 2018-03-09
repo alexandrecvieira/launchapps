@@ -45,6 +45,15 @@
 #define CONFFILE "launchapps.recent"
 #define DEFAULTBG "launchapps-bg-default.jpg"
 
+typedef struct {
+	LXPanel *panel;
+	config_setting_t *settings;
+	GtkWidget *icon_image;
+	char *image_path;
+	char *image_path_test;
+	char *version;
+} LaunchAppsPlugin;
+
 GtkWidget *main_window = NULL;
 GtkWidget *page_table = NULL;
 GtkWidget *layout_fixed = NULL;
@@ -68,15 +77,6 @@ int app_count = 0;
 int page_last_position = 0;
 const char *confdir;
 char *bg_image_path;
-
-typedef struct {
-	LXPanel *panel;
-	config_setting_t *settings;
-	GtkWidget *icon_image;
-	char *image_path;
-	char *image_path_test;
-	char *version;
-} LaunchAppsPlugin;
 
 // callback when window is to be closed
 static void lapps_main_window_close(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
@@ -817,13 +817,13 @@ static gboolean lapps_match_completion_selected(GtkEntryCompletion *completion, 
 	return FALSE;
 }
 
-static GtkWidget *lapps_create_main_window()
+static void lapps_create_main_window()
 {
-	indicator = NULL;
-	indicator_rw = NULL;
-	indicator_fw = NULL;
 	page_table = NULL;
 	layout_fixed = NULL;
+	indicator = NULL;
+	indicator_fw = NULL;
+	indicator_rw = NULL;
 
 	pages_list = NULL;
 
@@ -831,26 +831,26 @@ static GtkWidget *lapps_create_main_window()
 	lapps_app_list(NULL);
 
 	// main window
-	GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-	gtk_window_set_type_hint(GTK_WINDOW(window), GDK_WINDOW_TYPE_HINT_NORMAL);
-	gtk_window_fullscreen(GTK_WINDOW(window));
-	gtk_window_stick(GTK_WINDOW(window));
-	gtk_window_set_keep_above(GTK_WINDOW(window), TRUE);
-	gtk_window_set_title(GTK_WINDOW(window), LAPPSNAME);
-	gtk_widget_set_app_paintable(window, TRUE);
-	gtk_window_set_decorated(GTK_WINDOW(window), FALSE);
-	gtk_window_set_icon_name(GTK_WINDOW(window), LAPPSICON);
-	gtk_widget_add_events(window, GDK_BUTTON_PRESS_MASK);
-	gtk_widget_add_events(window, GDK_KEY_RELEASE_MASK);
-	g_signal_connect(GTK_OBJECT (window), "button-press-event", G_CALLBACK (lapps_main_window_close), NULL);
-	g_signal_connect(GTK_OBJECT (window), "key-release-event", G_CALLBACK (lapps_on_key_press), NULL);
-	g_signal_connect(GTK_OBJECT (window), "scroll-event", G_CALLBACK(lapps_on_mouse_scroll), NULL);
-	gtk_widget_show(window);
+	main_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	gtk_window_set_type_hint(GTK_WINDOW(main_window), GDK_WINDOW_TYPE_HINT_NORMAL);
+	gtk_window_fullscreen(GTK_WINDOW(main_window));
+	gtk_window_stick(GTK_WINDOW(main_window));
+	gtk_window_set_keep_above(GTK_WINDOW(main_window), TRUE);
+	gtk_window_set_title(GTK_WINDOW(main_window), LAPPSNAME);
+	gtk_widget_set_app_paintable(main_window, TRUE);
+	gtk_window_set_decorated(GTK_WINDOW(main_window), FALSE);
+	gtk_window_set_icon_name(GTK_WINDOW(main_window), LAPPSICON);
+	gtk_widget_add_events(main_window, GDK_BUTTON_PRESS_MASK);
+	gtk_widget_add_events(main_window, GDK_KEY_RELEASE_MASK);
+	g_signal_connect(GTK_OBJECT (main_window), "button-press-event", G_CALLBACK (lapps_main_window_close), NULL);
+	g_signal_connect(GTK_OBJECT (main_window), "key-release-event", G_CALLBACK (lapps_on_key_press), NULL);
+	g_signal_connect(GTK_OBJECT (main_window), "scroll-event", G_CALLBACK(lapps_on_mouse_scroll), NULL);
+	gtk_widget_show(main_window);
 
 	// window background
 	GtkWidget *layout = gtk_layout_new(NULL, NULL);
 	gtk_layout_set_size(GTK_LAYOUT(layout), s_width, s_height);
-	gtk_container_add(GTK_CONTAINER(window), layout);
+	gtk_container_add(GTK_CONTAINER(main_window), layout);
 	gtk_widget_show(layout);
 	GdkPixbuf *image_pix = gdk_pixbuf_new_from_file(bg_image_path, NULL);
 	GdkPixbuf *image_pix_scaled = gdk_pixbuf_scale_simple(image_pix, s_width, s_height, GDK_INTERP_BILINEAR);
@@ -984,8 +984,6 @@ static GtkWidget *lapps_create_main_window()
 	gtk_widget_show_all(indicators_align);
 	lapps_update_indicator_rw(FALSE);
 	lapps_update_indicator_fw(FALSE);
-
-	return window;
 }
 
 // load first page at plugin startup
@@ -1015,7 +1013,7 @@ static gboolean lapps_button_clicked(GtkWidget *widget, GdkEventButton *event, L
 		return FALSE;
 
 	if (main_window == NULL)
-		main_window = lapps_create_main_window();
+		lapps_create_main_window();
 
 	return TRUE;
 }
@@ -1108,7 +1106,7 @@ static GtkWidget *lapps_constructor(LXPanel *panel, config_setting_t *settings)
 	gtk_widget_show(icon_box);
 
 	lapps->icon_image = gtk_image_new_from_icon_name(LAPPSICON, lapps->panel->priv->icon_size);
-	gtk_widget_set_tooltip_text(lapps->icon_image, LAPPSNAME);
+	gtk_widget_set_tooltip_text(lapps->icon_image, "Click to find and run any application");
 
 	gtk_container_add(GTK_CONTAINER(icon_box), lapps->icon_image);
 	gtk_widget_show(lapps->icon_image);
