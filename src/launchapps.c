@@ -1057,6 +1057,8 @@ static gboolean lapps_apply_configuration(gpointer user_data)
 		}
 	}
 
+	config_group_set_string(lapps->settings, "image_path", lapps->image_path);
+
 	return TRUE;
 }
 

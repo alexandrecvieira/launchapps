@@ -1,6 +1,20 @@
 
+2018-03-09  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* Some changes in code and changed plugin button tip
+
+2018-03-08  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* Code otimizations
+
+2018-03-05  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* Código com menor consumo de memória, mas ainda insatisfatório: TODO usar array
+
 2018-02-27  Alexandre C Vieira <acamargo.vieira@gmail.com>
 
+	* launchapps.c (lapps_update_recent): using g_slice_alloc
+	* Using g_slice_alloc...
 	* Changed char to const char
 
 2018-02-23  Alexandre C Vieira <acamargo.vieira@gmail.com>
