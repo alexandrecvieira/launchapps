@@ -1,6 +1,7 @@
 
 2018-03-11  Alexandre C Vieira <acamargo.vieira@gmail.com>
 
+	* Refactorings to decrease memory consumption
 	* lappsutil.c (shadow_icon): icon size
 
 2018-03-09  Alexandre C Vieira <acamargo.vieira@gmail.com>
