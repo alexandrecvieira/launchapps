@@ -203,7 +203,10 @@ GdkPixbuf *shadow_icon(GdkPixbuf *src_pix, const char *path)
 	}
 
 	if (path != NULL)
+	{
+		MagickAdaptiveResizeImage(dest_wand, icon_size, icon_size);
 		MagickWriteImage(dest_wand, path);
+	}
 
 	if (shadow)
 		shadow = DestroyMagickWand(shadow);
