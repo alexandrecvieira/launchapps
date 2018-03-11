@@ -1,4 +1,8 @@
 
+2018-03-11  Alexandre C Vieira <acamargo.vieira@gmail.com>
+
+	* lappsutil.c (shadow_icon): icon size
+
 2018-03-09  Alexandre C Vieira <acamargo.vieira@gmail.com>
 
 	* launchapps.c (lapps_apply_configuration): Improvement for background
