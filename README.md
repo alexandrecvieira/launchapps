@@ -67,12 +67,13 @@ Para atualizar o LXPanel para a versão 0.9.3 no **Debian Jessie** faça a insta
  
 ![launchapps](https://user-images.githubusercontent.com/20074560/32780952-463bb7bc-c92a-11e7-9013-ddd843ed0ac4.gif)
 
-#### LaunchApps 1.1.2(Unreleased)
+#### LaunchApps 2.0.0(Unreleased)
 
 **New Features**
 * Recent Applications
 * Entry Completion
 * Compatibility with most used screen resolutions(1024x768 | 1280x800 | 1280x1024 | 1366x768 | 1440x900 | 1600x900 | 1680x1050 | 1920x1080)
+* Memory consumption was decreased
 
 ![launchappd-1 1 2](https://user-images.githubusercontent.com/20074560/35598237-4f371a8e-0609-11e8-9fe2-fc5f4b960928.png)
 

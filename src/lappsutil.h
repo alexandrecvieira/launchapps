@@ -23,7 +23,6 @@
 
 #include <string.h>
 #include <gdk/gdk.h>
-#include <gdk/gdkx.h>
 #include <gtk/gtk.h>
 #include <gio/gio.h>
 #include <glib.h>
@@ -34,17 +33,16 @@
 
 #include <wand/MagickWand.h>
 
-extern int icon_size, font_size, app_label_width, app_label_height;
+extern int icon_size, font_size, app_label_width, app_label_height, apps_table_width, apps_table_height;
 extern int indicator_font_size, indicator_width, indicator_height;
-extern int s_height, s_width, grid[2];
+extern int s_height, s_width, grid[2], main_vbox_border_width;
 extern double screen_size_relation;
-extern char *recent_label_font_size;
+extern const char *recent_label_font_size;
 
 void set_icons_fonts_sizes();
 gboolean blur_background(const char *image, const char *bg_image);
 GdkPixbuf *create_app_name(const char *app_name, double font_size);
 GdkPixbuf *shadow_icon(GdkPixbuf *src_pix, const char *path);
 int app_name_comparator(GAppInfo *item1, GAppInfo *item2);
-gboolean tables_finder(gpointer key, gpointer value, gpointer user_data);
 
 #endif /* LAPPSUTIL_H */
