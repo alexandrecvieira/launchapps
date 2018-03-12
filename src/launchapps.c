@@ -1066,7 +1066,7 @@ static GtkWidget *lapps_configure(LXPanel *panel, GtkWidget *p)
 	return lxpanel_generic_config_dlg("Application Launcher", panel, lapps_apply_configuration, p,
 			lapps->version, NULL, CONF_TYPE_TRIM,
 			" Application Launcher ", NULL, CONF_TYPE_TRIM,
-			"Copyright (C) 2017", NULL, CONF_TYPE_TRIM,
+			"Copyright (C) 2018", NULL, CONF_TYPE_TRIM,
 			" ", NULL, CONF_TYPE_TRIM,
 			"Background image", &lapps->image_path, CONF_TYPE_FILE_ENTRY,
 			NULL);
