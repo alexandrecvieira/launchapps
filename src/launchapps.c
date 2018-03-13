@@ -54,28 +54,28 @@ typedef struct {
 	char *version;
 } LaunchAppsPlugin;
 
-GtkWidget *main_window = NULL;
-GtkWidget *page_table = NULL;
-GtkWidget *layout_fixed = NULL;
-GtkWidget *indicator = NULL;
-GtkWidget *indicator_fw = NULL;
-GtkWidget *indicator_rw = NULL;
-GdkPixbuf *indicator_fw_pix = NULL;
-GdkPixbuf *indicator_rw_pix = NULL;
-GdkPixbuf *indicator_fw_shaded_pix = NULL;
-GdkPixbuf *indicator_rw_shaded_pix = NULL;
-GList *all_apps_list = NULL;
-GList *system_apps_list = NULL;
-GList *recent_tmp = NULL;
-GList *pages_list = NULL;
-GHashTable *labels_list = NULL;
-gboolean filtered = FALSE;
-int page_index = 0;
-int page_count = 0;
-int app_count = 0;
-int page_last_position = 0;
-const char *confdir;
-char *bg_image_path;
+static GtkWidget *main_window = NULL;
+static GtkWidget *page_table = NULL;
+static GtkWidget *layout_fixed = NULL;
+static GtkWidget *indicator = NULL;
+static GtkWidget *indicator_fw = NULL;
+static GtkWidget *indicator_rw = NULL;
+static GdkPixbuf *indicator_fw_pix = NULL;
+static GdkPixbuf *indicator_rw_pix = NULL;
+static GdkPixbuf *indicator_fw_shaded_pix = NULL;
+static GdkPixbuf *indicator_rw_shaded_pix = NULL;
+static GList *all_apps_list = NULL;
+static GList *system_apps_list = NULL;
+static GList *recent_tmp = NULL;
+static GList *pages_list = NULL;
+static GHashTable *labels_list = NULL;
+static gboolean filtered = FALSE;
+static int page_index = 0;
+static int page_count = 0;
+static int app_count = 0;
+static int page_last_position = 0;
+static const char *confdir;
+static char *bg_image_path;
 
 // callback when window is to be closed
 static void lapps_main_window_close(GtkWidget *widget, GdkEventButton *event, gpointer user_data)
