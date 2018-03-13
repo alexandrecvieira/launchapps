@@ -1,6 +1,12 @@
 
+2018-03-13  acamargovieira <acamargo.vieira@gmail.com>
+
+	* Merge branch '2.0.0'
+	* Changed the global variables to static
+
 2018-03-12  acamargovieira <acamargo.vieira@gmail.com>
 
+	* Merge branch '2.0.0'
 	* Copyright update
 
 2018-03-11  acamargovieira <acamargo.vieira@gmail.com>
