@@ -1,6 +1,6 @@
 /**
  *
- * Copyright (c) 2017 Alexandre C Vieira
+ * Copyright (c) 2017-2018 Alexandre C Vieira
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1066,7 +1066,7 @@ static GtkWidget *lapps_configure(LXPanel *panel, GtkWidget *p)
 	return lxpanel_generic_config_dlg("Application Launcher", panel, lapps_apply_configuration, p,
 			lapps->version, NULL, CONF_TYPE_TRIM,
 			" Application Launcher ", NULL, CONF_TYPE_TRIM,
-			"Copyright (C) 2018", NULL, CONF_TYPE_TRIM,
+			"Copyright (c) 2017-2018", NULL, CONF_TYPE_TRIM,
 			" ", NULL, CONF_TYPE_TRIM,
 			"Background image", &lapps->image_path, CONF_TYPE_FILE_ENTRY,
 			NULL);
