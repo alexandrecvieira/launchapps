@@ -1,4 +1,8 @@
 
+2018-03-19  acamargovieira <acamargo.vieira@gmail.com>
+
+	* launchapps.c (lapps_application_icon): free gicon
+
 2018-03-15  acamargovieira <acamargo.vieira@gmail.com>
 
 	* Copyright update
