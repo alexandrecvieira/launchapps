@@ -4,7 +4,7 @@
 #
 # Report bugs to <acamargo.vieira@gmail.com>.
 #
-# Copyright (C) 2017 Alexandre C Vieira.
+# Copyright (c) 2017-2018 Alexandre C Vieira.
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -1592,7 +1592,7 @@ Copyright (C) 2012 Free Software Foundation, Inc.
 This configure script is free software; the Free Software Foundation
 gives unlimited permission to copy, distribute and modify it.
 
-Copyright (C) 2017 Alexandre C Vieira.
+Copyright (c) 2017-2018 Alexandre C Vieira.
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or

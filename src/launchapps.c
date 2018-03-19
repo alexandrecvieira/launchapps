@@ -244,6 +244,9 @@ static GdkPixbuf *lapps_application_icon(GAppInfo *appinfo)
 	if (icon_info)
 		gtk_icon_info_free(icon_info);
 
+	if(g_icon)
+		g_object_unref(G_OBJECT(g_icon));
+
 	return icon;
 }
 
