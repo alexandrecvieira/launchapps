@@ -67,7 +67,7 @@ Para atualizar o LXPanel para a versão 0.9.3 no **Debian Jessie** faça a insta
  
 ![launchapps](https://user-images.githubusercontent.com/20074560/32780952-463bb7bc-c92a-11e7-9013-ddd843ed0ac4.gif)
 
-#### LaunchApps 2.0.0(Unreleased)
+### LaunchApps 2.0.0(Unreleased)
 
 **New Features**
 * Recent Applications
