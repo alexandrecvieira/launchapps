@@ -1,9 +1,0 @@
-autoscan: warning: missing AC_CHECK_FUNCS([pow]) wanted by: 
-	src/lappsutil.c:213
-autoscan: warning: missing AC_C_INLINE wanted by: 
-	lxpanel.private/private.h:199
-	lxpanel.private/private.h:204
-	lxpanel.private/private.h:209
-autoscan: warning: missing AC_TYPE_SIZE_T wanted by: 
-	src/lappsutil.c:63
-	src/lappsutil.c:161
