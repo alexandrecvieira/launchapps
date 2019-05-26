@@ -30,7 +30,7 @@ Para atualizar o LXPanel para a versão 0.9.3 no **Debian Jessie** faça a insta
 #### Para instalar pelo source:
 ##### Importante: O path: /usr/lib/x86_64-linux-gnu/lxpanel/plugins é o local de instalação dos plugins do LXPanel
 ##### Usei o Eclipse Oxygen(4.7) para implementar o projeto
-	git clone https://github.com/acamargovieira/launchapps.git
+	git clone https://github.com/alexandrecvieira/launchapps.git
 	cd launchapps
 	autoreconf -f
 	./configure --prefix=/usr --libdir=/usr/lib/x86_64-linux-gnu/lxpanel/plugins
@@ -72,7 +72,7 @@ Para atualizar o LXPanel para a versão 0.9.3 no **Debian Jessie** faça a insta
 **New Features**
 * Recent Applications
 * Entry Completion
-* Compatibility with most used screen resolutions(1024x768 | 1280x800 | 1280x1024 | 1366x768 | 1440x900 | 1600x900 | 1680x1050 | 1920x1080)
+* Compatibility with most used screen resolutions(1024x768 - 1280x800 - 1280x1024 - 1366x768 - 1440x900 - 1600x900 - 1680x1050 - 1920x1080)
 * Memory consumption was decreased
 
 ![launchappd-1 1 2](https://user-images.githubusercontent.com/20074560/35598237-4f371a8e-0609-11e8-9fe2-fc5f4b960928.png)
@@ -89,7 +89,7 @@ Para atualizar o LXPanel para a versão 0.9.3 no **Debian Jessie** faça a insta
 #### Added
 - Recent Applications
 - Entry Completion
-- Compatibility with most used screen resolutions(1024x768 | 1280x800 | 1280x1024 | 1366x768 | 1440x900 | 1600x900 | 1680x1050 | 1920x1080)
+- Compatibility with most used screen resolutions(1024x768 - 1280x800 - 1280x1024 - 1366x768 - 1440x900 - 1600x900 - 1680x1050 - 1920x1080)
 
 #### Fixed
 - Memory consumption
