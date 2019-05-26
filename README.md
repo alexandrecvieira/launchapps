@@ -30,7 +30,7 @@ Para atualizar o LXPanel para a versão 0.9.3 no **Debian Jessie** faça a insta
 #### Para instalar pelo source:
 ##### Importante: O path: /usr/lib/x86_64-linux-gnu/lxpanel/plugins é o local de instalação dos plugins do LXPanel
 ##### Usei o Eclipse Oxygen(4.7) para implementar o projeto
-	git clone https://github.com/acamargovieira/launchapps.git
+	git clone https://github.com/alexandrecvieira/launchapps.git
 	cd launchapps
 	autoreconf -f
 	./configure --prefix=/usr --libdir=/usr/lib/x86_64-linux-gnu/lxpanel/plugins
